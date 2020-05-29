@@ -181,11 +181,11 @@ set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA
 set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON
 set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON
 set_global_assignment -name VERILOG_FILE archimedes_mist_top.v
-set_global_assignment -name VERILOG_FILE "../../../../mist-modules/mist_video.v"
-set_global_assignment -name SYSTEMVERILOG_FILE "../../../../mist-modules/cofi.sv"
-set_global_assignment -name VERILOG_FILE "../../../../mist-modules/scandoubler.v"
-set_global_assignment -name SYSTEMVERILOG_FILE "../../../../mist-modules/rgb2ypbpr.sv"
-set_global_assignment -name VERILOG_FILE "../../../../mist-modules/osd.v"
+set_global_assignment -name VERILOG_FILE "mist-modules/scandoubler.v"
+set_global_assignment -name SYSTEMVERILOG_FILE "mist-modules/rgb2ypbpr.sv"
+set_global_assignment -name VERILOG_FILE "mist-modules/osd.v"
+set_global_assignment -name VERILOG_FILE "mist-modules/mist_video.v"
+set_global_assignment -name SYSTEMVERILOG_FILE "mist-modules/cofi.sv"
 set_global_assignment -name VERILOG_FILE sigma_delta_dac.v
 set_global_assignment -name VERILOG_FILE audio.v
 set_global_assignment -name VERILOG_FILE data_io.v
