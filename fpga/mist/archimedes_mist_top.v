@@ -479,7 +479,6 @@ archimedes_top ARCHIMEDES(
 	.sd_dout        ( sd_dout        ),
 	.sd_din         ( sd_din         ),
 	.sd_dout_strobe ( sd_dout_strobe ),
-	.sd_din_strobe  ( sd_din_strobe  ),
 
 	// IDE controller
 	.ide_req        ( ide_req        ),

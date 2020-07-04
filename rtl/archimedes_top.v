@@ -78,7 +78,6 @@ module archimedes_top(
 	input     [7:0] sd_dout,
 	output    [7:0] sd_din,
 	input           sd_dout_strobe,
-	input           sd_din_strobe,
 
 	// connection to the IDE controller
 	output          ide_req,      // new command request
@@ -364,7 +363,6 @@ fdc1772 #(.CLK(40000000)) FDC1772 (
 	.sd_dout        ( sd_dout          ),
 	.sd_din         ( sd_din           ),
 	.sd_dout_strobe ( sd_dout_strobe   ),
-	.sd_din_strobe  ( sd_din_strobe    ),
 
 	.floppy_drive	( floppy_drive     ),
 //	.floppy_motor	( floppy_motor     ),
