@@ -56,7 +56,8 @@ module i2cSlave (
   input rd,
   input [7:0] addr,
   input [7:0] din,
-  output [7:0] dout
+  output [7:0] dout,
+  input [63:0] RTC
 );
 
 assign dout = dataFromRegIF;
@@ -159,7 +160,8 @@ registerInterface u_registerInterface(
   .addr((we | rd) ? addr : regAddr),
   .dataIn(we ? din : dataToRegIF),
   .writeEn(writeEn | we),
-  .dataOut(dataFromRegIF)
+  .dataOut(dataFromRegIF),
+  .RTC(RTC)
 );
 
 serialInterface u_serialInterface (

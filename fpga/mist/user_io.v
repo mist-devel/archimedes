@@ -34,6 +34,7 @@ module user_io (
         output           scandoubler_disable,
         output           ypbpr,
         output           no_csync,
+        output reg[63:0] rtc,
 
         input      [7:0] kbd_out_data,
         input            kbd_out_strobe,
@@ -304,6 +305,8 @@ always @(posedge clk_sys) begin
 
 				// send image info
 				8'h1d: if(abyte_cnt<5) img_size[(abyte_cnt-1)<<3 +:8] <= spi_byte_in;
+
+				8'h22: if(abyte_cnt<9) rtc[(abyte_cnt-1)<<3 +:8] <= spi_byte_in;
 			endcase
 		end
 	end

@@ -105,6 +105,7 @@ wire [1:0] switches;
 wire       scandoubler_disable;
 wire       ypbpr;
 wire       no_csync;
+wire[63:0] rtc;
 
 // the top file should generate the correct clocks for the machine
 
@@ -339,6 +340,7 @@ user_io user_io(
 	.scandoubler_disable(scandoubler_disable),
 	.ypbpr          ( ypbpr          ),
 	.no_csync       ( no_csync       ),
+	.rtc            ( rtc            ),
 
 	.JOY0           ( joyA           ),
 	.JOY1           ( joyB           ),
@@ -554,7 +556,8 @@ i2cSlaveTop CMOS (
 	.rd             ( uploading && dio_index == 3),
 	.addr           ( loader_addr[7:0] ),
 	.din            ( loader_dout[7:0] ),
-	.dout           ( loader_din )
+	.dout           ( loader_din ),
+	.RTC            ( rtc            )
 );
 
 audio	AUDIO	(

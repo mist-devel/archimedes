@@ -57,7 +57,8 @@ module i2cSlaveTop (
   input rd,
   input [7:0] addr,
   input [7:0] din,
-  output [7:0] dout
+  output [7:0] dout,
+  input [63:0] RTC
 );
 
 i2cSlave u_i2cSlave(
@@ -70,7 +71,8 @@ i2cSlave u_i2cSlave(
   .we(we),
   .addr(addr),
   .din(din),
-  .dout(dout)
+  .dout(dout),
+  .RTC(RTC)
 );
 
 endmodule
