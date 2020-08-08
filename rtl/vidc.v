@@ -103,11 +103,11 @@ wire		snd_load;
 wire		currq_int;
 wire		vidrq_int;
 
-reg      cepix;
+reg       cepix;
+reg [2:0] div6 = 0;
+reg [1:0] div4 = 0;
 
 always @(posedge clkpix) begin
-	reg [2:0] div6 = 0;
-	reg [1:0] div4 = 0;
 
 	div4 <= div4 + 1'd1;
 	div6 <= div6 + 1'd1;
@@ -191,7 +191,7 @@ vidc_dmachannel #(.FIFO4WORDS(1'b1)) SOUNDDMA (
 	.rst		( rst_i			),
 	.clkcpu		( clkcpu		),
 	.clkdev		( clkpix		),
-	.cedev		( cepix		),
+	.cedev		( div4[0]   ),
 	
 	.cpu_data	( viddat		),
 	.ak			( sndak			),
@@ -210,9 +210,9 @@ vidc_audio AUDIOMIXER(
     .cpu_clk    ( clkcpu    ),
     .cpu_wr     ( vidw      ),
     .cpu_data   ( cpu_dat   ),
-    
+
     .aud_clk    ( clkpix    ),
-    .aud_ce     ( cepix     ),
+    .aud_ce     ( div4[0]   ),
     .aud_rst    ( rst_i     ),
     .aud_data   ( snd_sam_data ),
     .aud_en     ( snd_sam_en ),

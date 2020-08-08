@@ -50,55 +50,53 @@ module vidc_audio
 localparam  SOUND_SAMFREQ       = 4'b1100;
 localparam  SOUND_REGISTERS     = 5'b01100;   
 
-wire		aud_1mhz_en;
-reg  [4:0]	aud_1mhz_count;
+wire       aud_1mhz_en;
+reg  [4:0] aud_1mhz_count;
 
-reg [2:0] channel;
+reg  [2:0] channel;
    
-reg [2:0]   vidc_sir[0:7];
-reg [8:0]   vidc_sfr;
-wire [2:0]  vidc_mixer = vidc_sir[channel];
-   
+reg  [2:0] vidc_sir[0:7];
+reg  [8:0] vidc_sfr;
+wire [2:0] vidc_mixer = vidc_sir[channel];
+
 reg [15:0] mulaw_table[0:255];
 
 // 1mhz pulse counter.
-reg [7:0] aud_delay_count;
-   
+reg  [7:0] aud_delay_count;
+
 initial begin
-   
-   // load the u-law table
-   $readmemh("vidc_mulaw.mif", mulaw_table);   
-   
-   
-  channel = 3'd0;
-        
-  aud_delay_count   = 8'b11111111;
-  aud_1mhz_count 	= 5'd0;
-   
+
+	// load the u-law table
+	$readmemh("vidc_mulaw.mif", mulaw_table);
+
+	channel = 3'd0;
+
+	aud_delay_count   = 8'b11111111;
+	aud_1mhz_count 	= 5'd0;
+
 end
 
-  
 always @(posedge cpu_clk) begin
-   
-   if (cpu_wr) begin 
-      
-      if ({cpu_data[31:29],cpu_data[25:24]} == SOUND_REGISTERS) begin
 
-         $display("Writing the stereo image registers: 0x%08x", cpu_data);
-         vidc_sir[{cpu_data[28:26]}] <= cpu_data[2:0];
+	if (cpu_wr) begin 
 
-      end
+		if ({cpu_data[31:29],cpu_data[25:24]} == SOUND_REGISTERS) begin
 
-      if (cpu_data[31:28] == SOUND_SAMFREQ) begin
-         
-         $display("VIDC SFR: %x", cpu_data[7:0]);
-         if (cpu_data[8]) begin
-            vidc_sfr <= cpu_data[8:0];
-         end
-      end
-         
-   end
-   
+			$display("Writing the stereo image registers: 0x%08x", cpu_data);
+			vidc_sir[{cpu_data[28:26]}] <= cpu_data[2:0];
+
+		end
+
+		if (cpu_data[31:28] == SOUND_SAMFREQ) begin
+
+			$display("VIDC SFR: %x", cpu_data[7:0]);
+			if (cpu_data[8]) begin
+				vidc_sfr <= cpu_data[8:0];
+			end
+		end
+
+	end
+
 end
 
 reg [7:0] aud_data_l, aud_data_r;
@@ -118,6 +116,8 @@ always @(posedge aud_clk) begin
 
 			aud_delay_count   <= 8'b11111111;
 			aud_1mhz_count 	<= 5'd0;
+			aud_data_l <= 0;
+			aud_data_r <= 0;
 
 		end else if (aud_1mhz_en) begin
 
@@ -140,6 +140,6 @@ always @(posedge aud_clk) begin
 end
 
 // this is the trigger for the 1mhz enable pulse.
-assign aud_1mhz_en = &aud_1mhz_count[3:2]; // 24 now we're using the 24mhz clock.
+assign aud_1mhz_en = &aud_1mhz_count[4:3]; // 24 now we're using the 24mhz clock
 
 endmodule
