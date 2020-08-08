@@ -69,6 +69,9 @@ module ioc(
 		input            kbd_in_strobe
 );
 
+reg       ir_sync, ir_synced;
+always @(posedge clkcpu) { ir_synced, ir_sync } <= { ir_sync, ir };
+
 reg [4:0]   clken_counter;
 
 wire [7:0]	irqa_dout, irqb_dout, firq_dout;
@@ -241,7 +244,7 @@ always @(posedge clkcpu) begin
 	kbd_out_strobe <= !txdone;
 	kbd_in_irq_ack <= serial_selected && read_request;
 
-	ir_r		<= ir;
+	ir_r		<= ir_synced;
 	
 	if (!txdone &&(timer[3].reload)) begin 
 		
@@ -280,9 +283,9 @@ assign {select, sext}	  = 	   wb_bank == 3'b001 ? 8'b00000011 :
 
 						
 assign c_out = ctrl_state;
-assign ctrl_dout = { ir, 1'b1, c_in & c_out }; 
+assign ctrl_dout = { ir_synced, 1'b1, c_in & c_out }; 
 
-assign ir_edge = ~ir_r & ir;
+assign ir_edge = ~ir_r & ir_synced;
 
 assign clk2m_en = !clken_counter;
 assign clk8m_en = clken_counter == 0 || clken_counter == 5 || clken_counter == 10 || clken_counter == 15;

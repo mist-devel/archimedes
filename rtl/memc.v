@@ -107,7 +107,7 @@ module memc(
 	reg [3:0]	dma_ack_r;
    
 	wire 		dma_in_progress = cur_load | vid_load | snd_load;
-	wire 		dma_request	= ~flybk & vidrq | memc_control[11] & sndrq;
+	wire 		dma_request	= ~flybk_synced & vidrq | memc_control[11] & sndrq;
 	reg         dma_request_r;    
 	wire 		video_dma_ip = cur_load | vid_load;
 	wire 		sound_dma_ip = snd_load;
@@ -116,6 +116,7 @@ module memc(
 	wire		cpu_ram_cycle;
    
 	wire 		phycs, tablew, romcs, memcw;
+	reg     hsync_synced, flybk_synced;
 
 // register addresses.
 localparam REG_Vinit 	= 3'b000;
@@ -126,6 +127,16 @@ localparam REG_Sstart	= 3'b100;
 localparam REG_SendN		= 3'b101;
 localparam REG_Sptr	= 3'b110;
 localparam REG_Ctrl	= 3'b111;
+
+always @(posedge clkcpu) begin
+	reg hsync_sync1, flybk_sync1;
+
+	hsync_sync1 <= hsync;
+	hsync_synced <= hsync_sync1;
+
+	flybk_sync1 <= flybk;
+	flybk_synced <= flybk_sync1;
+end
 
 wire       table_valid;
 wire       err;
@@ -277,7 +288,7 @@ always @(posedge clkcpu) begin
 		end 
 	
 		// video dma stuff.
-		if (flybk == 1'b1) begin
+		if (flybk_synced == 1'b1) begin
 
 			// stop all video dma on flybk
 			vid_address <= vid_init;
@@ -315,7 +326,7 @@ always @(posedge clkcpu) begin
 			// priority is to video over sound.
 			if (vidrq  & ~dma_in_progress & ~cpu_load) begin
 	 			
-				if (hsync == 1'b1) begin 
+				if (hsync_synced == 1'b1) begin 
 				   
 					vid_load <= 1'b1;
 				

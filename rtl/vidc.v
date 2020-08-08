@@ -44,9 +44,8 @@ module vidc(
 
         input 	 		sndak,
 	    output 		 	sndrq,
-        
+
 	    output 	 		flybk,
-	    output reg		hsync_cpu,
 
 	    // video outputs
 	    output 	 		hsync,
@@ -387,8 +386,9 @@ assign	video_b[2:0]	= vidc_colour[10:8];
 
 assign video_en     = enabled;
 
+reg hsync_sync1, hsync_cpu;
 // this demux's the two dma channels that share the vidrq.
-always @(posedge clkcpu) hsync_cpu <= hsync; // transfer hsync to cpu clock domain
+always @(posedge clkcpu) { hsync_cpu, hsync_sync1 } <= { hsync_sync1, hsync }; // transfer hsync to cpu clock domain
 assign vidrq = hsync_cpu ? vidrq_int : ~vid_load & currq_int;
 
 endmodule
