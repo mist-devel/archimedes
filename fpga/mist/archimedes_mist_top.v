@@ -433,7 +433,7 @@ wire  [7:0] ide_data_i;
 wire        ide_data_rd;
 wire        ide_data_we;
 
-wire        reset = ~ram_ready | ~rom_ready;
+wire        reset = ~ram_ready | ~rom_ready | buttons[1];
 
 archimedes_top ARCHIMEDES(
 	

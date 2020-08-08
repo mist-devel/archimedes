@@ -144,7 +144,7 @@ wire hsync_cpu;
 a23_core ARM(
 
 	.i_clk		( CLKCPU_I		),
-	
+	.i_reset	( RESET_I		),
 	.o_wb_cyc	( cpu_cyc		),
 	.o_wb_stb	( cpu_stb		),
 	.o_wb_we	( cpu_we			),
