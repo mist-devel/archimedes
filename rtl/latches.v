@@ -29,64 +29,64 @@
  
 module latches(
 
-   input	      	clkcpu,	 // system cpu clock.
+	input     clkcpu,  // system cpu clock.
 
 	// "wishbone bus" the ack is externally generated currently. 
-	input				wb_cyc,
-	input				wb_stb,
-	input				wb_we,
+	input         wb_cyc,
+	input         wb_stb,
+	input         wb_we,
 	
-	input [15:2]	wb_adr, 	// la
-	input [7:0]		wb_dat_i, 	// bd
-	output [7:0]		wb_dat_o, 	// bd
+	input  [15:2] wb_adr,   // la
+	input   [7:0] wb_dat_i, // bd
+	output  [7:0] wb_dat_o, // bd
 	
 	// floppy latch signals.
 	output  [3:0] floppy_drive,
-	output  		  floppy_side, 
-	output  		  floppy_motor,
-	output 		  floppy_inuse,
-	output 		  floppy_density,
-	output 		  floppy_reset,
-	
+	output        floppy_side, 
+	output        floppy_motor,
+	output        floppy_inuse,
+	output        floppy_density,
+	output        floppy_reset,
+
 	// place any signals that need to be passed up to the top after here. 
 
-	input [4:0]	joy0,
-	input [4:0]	joy1,
+	input   [4:0] joy0,
+	input   [4:0] joy1,
 	
-	output [1:0] baseclk,
-	output [1:0] syncpol
+	output  [1:0] baseclk,
+	output  [1:0] syncpol
 
 );
 
-reg [7:0]	printer_data;
-reg [7:0]	ext_latch_a;
-reg [7:0]	ext_latch_b;
-reg [7:0]	ext_latch_c;
+reg   [7:0] printer_data;
+reg   [7:0] ext_latch_a;
+reg   [7:0] ext_latch_b;
+reg   [7:0] ext_latch_c;
 
 wire write_request = wb_stb & wb_cyc & wb_we;
 
 initial begin 
 
-	printer_data 	= 8'd0;
-	ext_latch_a 	= 8'hFF;
-	ext_latch_b 	= 8'hFF;
-	ext_latch_c 	= 8'd0; // A540 only. Used for VIDC enhancer.
-	
+	printer_data = 8'd0;
+	ext_latch_a  = 8'hFF;
+	ext_latch_b  = 8'hFF;
+	ext_latch_c  = 8'd0; // A540 only. Used for VIDC enhancer.
+
 end
 
 always @(posedge clkcpu) begin 
 
 	if (write_request) begin 
-	
-		case (wb_adr)  
-			
+
+		case (wb_adr)
+
 			14'h0004: printer_data<= wb_dat_i; // 0x10
 			14'h0010: ext_latch_a <= wb_dat_i; // 0x40
 			14'h0006: ext_latch_b <= wb_dat_i; // 0x18
 			14'h0012: ext_latch_c <= wb_dat_i; // 0x48
-			
+
 		endcase
-	
+
 	end
 
 end
@@ -98,8 +98,8 @@ assign floppy_inuse = ext_latch_a[6];
 assign floppy_density = ext_latch_b[1];
 assign floppy_reset = ext_latch_b[3];
 
-assign wb_dat_o	= wb_adr == 14'h001e ? {3'b011, joy0} :
-				  wb_adr == 14'h001f ? {3'b011, joy1} : 8'hFF;
+assign wb_dat_o = wb_adr == 14'h001e ? {3'b011, joy0} :
+                  wb_adr == 14'h001f ? {3'b011, joy1} : 8'hFF;
 
 assign baseclk = ext_latch_c[1:0];
 assign syncpol = ext_latch_c[3:2];

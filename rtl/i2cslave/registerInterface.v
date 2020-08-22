@@ -73,16 +73,16 @@ wire [7:0] year = {3'b000,RTC[47:44],1'b0} + {RTC[47:44],3'b000} + RTC[43:40];
 
 // --- I2C Read
 always @(posedge clk) begin
-  casex (addr)
+  casez (addr)
     8'h02: dataOut = RTC[7:0];   // secs
     8'h03: dataOut = RTC[15:8];  // mins
     8'h04: dataOut = RTC[23:16]; // hour
     8'h05: dataOut = {year[1:0],RTC[29:24]}; // date
     8'h06: dataOut = {RTC[50:48],RTC[36:32]}; // weekday/month
-    8'h0x: dataOut <= 8'h00; // everything else < 16
+    8'h0?: dataOut = 8'h00; // everything else < 16
     8'hC0: dataOut = year;
     8'hC1: dataOut = 20;
-    default: dataOut <= memory[addr];
+    default: dataOut = memory[addr];
   endcase
 end
 

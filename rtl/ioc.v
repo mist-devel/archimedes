@@ -28,64 +28,64 @@
  */
  
 module ioc(
-		
-		input 	 		clkcpu, 	// cpu bus clock domain
-		output			clk2m_en,
-		output			clk8m_en,
-		
-		input 			por, 		// power on reset signal.
 
-		input	[5:0]		c_in,		
-		output[5:0]		c_out,
-		
-		output [7:1]	select, // perhiperhal select lines
-		output 				sext, 	// external perhiperhal select
-	
-		input [1:0]		fh, // fast high interrupt.
-		input	[7:0]		il, // active low interrupt lines
-		input				ir, // 
-	
-		// "wishbone" bus
-		input				wb_we,
-		input				wb_stb,
-		input				wb_cyc,
-		
-		input [6:2]		wb_adr,
-		input [7:0]		wb_dat_i,
-		output [7:0]	wb_dat_o,
-		
-		// perhaps rename but its part of an IOC bus cycle.
-		input	[2:0]		wb_bank, 
+	input 	 		clkcpu, 	// cpu bus clock domain
+	output			clk2m_en,
+	output			clk8m_en,
 
-		// interrupts
-		output 			irq,
-		output 			firq,
-		
-		// keyboard interface to arm controller. Data is valid
-		// in rising edge of strobe
-		output reg [7:0] kbd_out_data,
-		output reg       kbd_out_strobe,
-		input [7:0]      kbd_in_data,
-		input            kbd_in_strobe
+	input 			por, 		// power on reset signal.
+
+	input	[5:0]		c_in,		
+	output[5:0]		c_out,
+
+	output [7:1]	select, // perhiperhal select lines
+	output 				sext, 	// external perhiperhal select
+
+	input [1:0]		fh, // fast high interrupt.
+	input	[7:0]		il, // active low interrupt lines
+	input				ir, // 
+
+	// "wishbone" bus
+	input				wb_we,
+	input				wb_stb,
+	input				wb_cyc,
+
+	input [6:2]		wb_adr,
+	input [7:0]		wb_dat_i,
+	output [7:0]	wb_dat_o,
+
+	// perhaps rename but its part of an IOC bus cycle.
+	input	[2:0]		wb_bank, 
+
+	// interrupts
+	output 			irq,
+	output 			firq,
+
+	// keyboard interface to arm controller. Data is valid
+	// in rising edge of strobe
+	output reg [7:0] kbd_out_data,
+	output reg       kbd_out_strobe,
+	input [7:0]      kbd_in_data,
+	input            kbd_in_strobe
 );
 
 reg       ir_sync, ir_synced;
 always @(posedge clkcpu) { ir_synced, ir_sync } <= { ir_sync, ir };
 
-reg [4:0]   clken_counter;
+reg   [4:0] clken_counter;
 
-wire [7:0]	irqa_dout, irqb_dout, firq_dout;
-wire			irqa_req, irqb_req, firq_req;
-wire			irqa_selected, irqb_selected, firq_selected;
+wire  [7:0] irqa_dout, irqb_dout, firq_dout;
+wire        irqa_req, irqb_req, firq_req;
+wire        irqa_selected, irqb_selected, firq_selected;
 
-wire			ctrl_selected = wb_adr[6:2] == 5'd0 /* synthesis keep */;
-wire [7:0]	ctrl_dout;
-reg  [5:0]	ctrl_state;
+wire        ctrl_selected = wb_adr[6:2] == 5'd0 /* synthesis keep */;
+wire  [7:0] ctrl_dout;
+reg   [5:0] ctrl_state;
 
-wire		serial_selected = wb_adr[6:2] == 5'd1 /* synthesis keep */;
+wire        serial_selected = wb_adr[6:2] == 5'd1 /* synthesis keep */;
 
-wire write_request 	= (wb_bank == 3'b000) & wb_stb & wb_cyc & wb_we;
-wire read_request 	= (wb_bank == 3'b000) & wb_stb & wb_cyc & !wb_we;
+wire write_request = (wb_bank == 3'b000) & wb_stb & wb_cyc & wb_we;
+wire read_request  = (wb_bank == 3'b000) & wb_stb & wb_cyc & !wb_we;
 
 // keyboard input is valid on rising edge of kbd_in_strobe. Latch data then
 // and set irq
@@ -109,122 +109,122 @@ wire txdone = txcount == 5'd0 /* synthesis keep */;
 reg ir_r;
 wire ir_edge;
 
-   // Instantiate the Unit Under Test (UUT)
-   ioc_irq  #(
+// Instantiate the Unit Under Test (UUT)
+ioc_irq  #(
 	.ADDRESS(2'b01),
 	.PERMBITS(8'h80),
 	.CANCLEAR(8'b01111111)
-	) IRQA
-   (
-		.clkcpu 		( clkcpu 		),
-		
-		.i				( {1'b1, timer[1].reload, timer[0].reload, por, ir_edge, 3'b000}),
-		.irq			( irqa_req		),
-		.c				( 8'h00			),
-		.addr			( wb_adr[6:2]	),
-		.din			( wb_dat_i		),
-		.dout			( irqa_dout		),
-		.sel			( irqa_selected	),
-		.write			( write_request	)
-		
-	);
-		
-   // Instantiate the Unit Under Test (UUT)
-   ioc_irq #(
+) IRQA
+(
+	.clkcpu ( clkcpu ),
+
+	.i      ( {1'b1, timer[1].reload, timer[0].reload, por, ir_edge, 3'b000} ),
+	.irq    ( irqa_req ),
+	.c      ( 8'h00 ),
+	.addr   ( wb_adr[6:2] ),
+	.din    ( wb_dat_i ),
+	.dout   ( irqa_dout ),
+	.sel    ( irqa_selected ),
+	.write  ( write_request )
+
+);
+
+// Instantiate the Unit Under Test (UUT)
+ioc_irq #(
 	.ADDRESS(2'b10),
 	.CANCLEAR(8'b00000000) 
-	) IRQB
-   (
-		.clkcpu 		( clkcpu 		),
-		
-		.i				( { kbd_in_irq,  txdone, ~il[5:0]}),
-		.c				( {!kbd_in_irq, ~txdone,  il[5:0]}),
-		.irq			( irqb_req		),
-		
-		.addr			( wb_adr[6:2]	),
-		.din			( wb_dat_i		),
-		.dout			( irqb_dout		),
-		.sel			( irqb_selected	),		
-		.write		 	( write_request	)
-	);
-		
+) IRQB
+(
+	.clkcpu ( clkcpu ),
 
-   ioc_irq  #(
-   .ADDRESS(2'b11),
-   .CANCLEAR(8'd0) 
-	) FIRQ
-   (
-		.clkcpu 		( clkcpu 		),
-		
-		.i				( {6'h00, fh[1:0]}	),
-		.c				( {6'h00, ~fh[1:0]}),
-		.irq			( firq_req		),
-		
-		.addr			( wb_adr[6:2]	),
-		.din			( wb_dat_i		),
-		.dout			( firq_dout		),
-		.sel			( firq_selected	),
+	.i      ( { kbd_in_irq,  txdone, ~il[5:0]} ),
+	.c      ( {!kbd_in_irq, ~txdone,  il[5:0]} ),
+	.irq    ( irqb_req ),
 
-		.write		 	( write_request	)
-	);
+	.addr   ( wb_adr[6:2] ),
+	.din    ( wb_dat_i ),
+	.dout   ( irqb_dout ),
+	.sel    ( irqb_selected ),
+	.write  ( write_request )
+);
+
+
+ioc_irq  #(
+	.ADDRESS(2'b11),
+	.CANCLEAR(8'd0)
+) FIRQ
+(
+	.clkcpu ( clkcpu ),
+
+	.i      ( {6'h00, fh[1:0]} ),
+	.c      ( {6'h00, ~fh[1:0]}),
+	.irq    ( firq_req ),
+
+	.addr   ( wb_adr[6:2] ),
+	.din    ( wb_dat_i ),
+	.dout   ( firq_dout ),
+	.sel    ( firq_selected ),
+
+	.write  ( write_request )
+);
 
 
 localparam TIMERS = 4;
 
 genvar c;
-generate 
-	
+generate
+
 	for (c = 0; c < TIMERS; c = c + 1) begin: timer
-	
-		reg[15:0]	latch_i;
-		reg[15:0]	counter;
-		reg[15:0]	latch_o;
+
+		reg  [15:0] latch_i;
+		reg  [15:0] counter;
+		reg  [15:0] latch_o;
 		reg         reload;
-		
-		wire		selected = wb_adr[6] & (c[1:0] == wb_adr[5:4]);
-		wire [7:0]	out		 = wb_adr[2] ? latch_o[15:8] : latch_o[7:0];
-	
+
+		wire        selected = wb_adr[6] & (c[1:0] == wb_adr[5:4]);
+		wire  [7:0] out      = wb_adr[2] ? latch_o[15:8] : latch_o[7:0];
+
 		initial begin 
-		
-			latch_i 	= 16'd0;
-			counter 	= 16'd0;
-			latch_o 	= 16'd0;
-			reload   = 1'b0;
-			
+
+			latch_i = 16'd0;
+			counter = 16'd0;
+			latch_o = 16'd0;
+			reload  = 1'b0;
+
 		end
-	
+
 		always @(posedge clkcpu) begin
-					
+
 			reload  <= 1'b0;
-			
+
 			if (write_request & selected) begin 
-			
+
 				case (wb_adr[3:2])
-				
-					2'b00:	latch_i[7:0] 	<= wb_dat_i;
-					2'b01:	latch_i[15:8] 	<= wb_dat_i;
-					2'b10:	counter 		<= {latch_i[15:4],4'd0};
-					2'b11:	latch_o 		<= counter;
-				
+
+					2'b00: latch_i[7:0]  <= wb_dat_i;
+					2'b01: latch_i[15:8] <= wb_dat_i;
+					2'b10: counter       <= {latch_i[15:4],4'd0};
+					2'b11: latch_o       <= counter;
+
 				endcase
-			
+
 			end else if (clk2m_en) begin
-				
+
 				counter <= counter - 15'd1;
-				
+
 				if (~|counter) begin 
-			
+
 					reload  <= 1'b1;
 					counter <= {latch_i[15:4],4'd0};
-			
+
 				end
-				
-			end 
-			
+
+			end
+
 		end
 
 	end
-	
+
 endgenerate
 
 initial begin 
@@ -232,7 +232,7 @@ initial begin
 	ctrl_state = 6'h3F;
 
 	ir_r = 1'b1;
-	
+
 end
 
 
@@ -244,12 +244,12 @@ always @(posedge clkcpu) begin
 	kbd_out_strobe <= !txdone;
 	kbd_in_irq_ack <= serial_selected && read_request;
 
-	ir_r		<= ir_synced;
-	
+	ir_r           <= ir_synced;
+
 	if (!txdone &&(timer[3].reload)) begin 
-		
+
 		txcount <= txcount - 4'd1;
-		
+
 	end
 
 	// increment the clock counter. 40 MHz clkcpu assumed.
@@ -257,31 +257,30 @@ always @(posedge clkcpu) begin
 	if (clken_counter == 19) clken_counter <= 0;
 
 	if (write_request & ctrl_selected) begin 
-	
+
 		ctrl_state <= wb_dat_i[5:0];
-	
+
 	end
-	
+
 	if (write_request & serial_selected) begin 
 		// simulate a serial port write to the console.
 		kbd_out_strobe <= 1'b0;
 		kbd_out_data <= wb_dat_i[7:0];
 		txcount <= 5'd20;
-	end 
+	end
 
-	
 end
 
-// external perhiperhal stuff. 
-assign {select, sext}	  = 	   wb_bank == 3'b001 ? 8'b00000011 : 
-						wb_bank == 3'b010 ? 8'b00000101 :
-						wb_bank == 3'b011 ? 8'b00001001 :
-						wb_bank == 3'b100 ? 8'b00010001 :
-						wb_bank == 3'b101 ? 8'b00100001 :
-						wb_bank == 3'b110 ? 8'b01000001 :
-						wb_bank == 3'b111 ? 8'b10000001 : 8'd0;
+// external perhiperhal stuff.
+assign {select, sext} = wb_bank == 3'b001 ? 8'b00000011 : 
+                        wb_bank == 3'b010 ? 8'b00000101 :
+                        wb_bank == 3'b011 ? 8'b00001001 :
+                        wb_bank == 3'b100 ? 8'b00010001 :
+                        wb_bank == 3'b101 ? 8'b00100001 :
+                        wb_bank == 3'b110 ? 8'b01000001 :
+                        wb_bank == 3'b111 ? 8'b10000001 : 8'd0;
 
-						
+
 assign c_out = ctrl_state;
 assign ctrl_dout = { ir_synced, 1'b1, c_in & c_out }; 
 
@@ -290,19 +289,19 @@ assign ir_edge = ~ir_r & ir_synced;
 assign clk2m_en = !clken_counter;
 assign clk8m_en = clken_counter == 0 || clken_counter == 5 || clken_counter == 10 || clken_counter == 15;
 
-assign wb_dat_o = 	read_request ?
-					(ctrl_selected ?  ctrl_dout :
-					serial_selected ? kbd_in_data_latch	:
-					irqa_selected ?  irqa_dout : 
-					irqb_selected ?  irqb_dout : 
-					firq_selected ?  firq_dout : 
-					timer[0].selected ? timer[0].out :
-					timer[1].selected ? timer[1].out :
-					timer[2].selected ? timer[2].out :
-					timer[3].selected ? timer[3].out : 8'hFF) : 8'hFF;
+assign wb_dat_o = read_request ?
+                (ctrl_selected ? ctrl_dout :
+               serial_selected ? kbd_in_data_latch :
+                 irqa_selected ? irqa_dout :
+                 irqb_selected ? irqb_dout :
+                 firq_selected ? firq_dout :
+             timer[0].selected ? timer[0].out :
+             timer[1].selected ? timer[1].out :
+             timer[2].selected ? timer[2].out :
+             timer[3].selected ? timer[3].out : 8'hFF) : 8'hFF;
 
-assign	irq	= irqa_req | irqb_req;
-assign	firq	= firq_req;
+assign irq  = irqa_req | irqb_req;
+assign firq = firq_req;
 // sext is high if any bits of select are high
-					
+
 endmodule

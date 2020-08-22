@@ -29,17 +29,17 @@
  
 module memc_translator
 (
-		input 			clkcpu,
-		
-		input			wr,		// write to the page table
-		input [1:0]		page_size,
-		input			spvmd,
-		input			osmd,
-		input			mem_write,
-		
-		input	[25:0]	addr_i,
-		output  [25:0]	addr_o,
-		output			valid
+	input         clkcpu,
+
+	input         wr, // write to the page table
+	input   [1:0] page_size,
+	input         spvmd,
+	input         osmd,
+	input         mem_write,
+
+	input  [25:0] addr_i,
+	output [25:0] addr_o,
+	output        valid
 );
 
 localparam PAGE_TABLE_SIZE = 128;
@@ -50,7 +50,7 @@ localparam PAGE_TABLE_SIZE = 128;
 // SPVMD| R/W  | R/W  | R/W  | R/W  |
 //  OSMD| R/W  | R/W  |  R   |  R   |
 // USRMD| R/W  |  R   |  -   |  -   |
-// 		|------|------|------|------|
+//      |------|------|------|------|
 
 // address translation table.
 
@@ -61,39 +61,39 @@ localparam PAGE_TABLE_SIZE = 128;
 // ppn swizzle for 32K page size. 
 // could potentially get 16Mb here by making 512 pages.
 wire [6:0] ppn =  page_size == 2'b00 ? {addr_i[6:0]} :
-						page_size == 2'b01 ? {addr_i[0], addr_i[6:1]} : 
-						page_size == 2'b10 ? {addr_i[1:0], addr_i[6:2]} :
-										         {addr_i[1], addr_i[2], addr_i[0], addr_i[6:3]};
+                  page_size == 2'b01 ? {addr_i[0], addr_i[6:1]} :
+                  page_size == 2'b10 ? {addr_i[1:0], addr_i[6:2]} :
+                                       {addr_i[1], addr_i[2], addr_i[0], addr_i[6:3]};
 
 genvar c;
 generate
 	for (c = 0; c < PAGE_TABLE_SIZE; c = c + 1) begin: pgentry
+
+		reg  [14:0] r    = 0; // register for this table entry.
+
+		wire        prot = spvmd | (osmd & ~mem_write) | (osmd & mem_write & r[14]) | ~r[14] & r[13] & ~mem_write | ~r[14] & ~r[13];
 		
-		reg[14:0] 	r	= 	0; 				// register for this table entry.
-		
-		wire 		prot		= spvmd | (osmd & ~mem_write) | (osmd & mem_write & r[14]) | ~r[14] & r[13] & ~mem_write | ~r[14] & ~r[13];
-		
-		wire		en	= 	r[12:3] == addr_i[24:15] & prot; // lookup logic when this table is active.
-		wire 		sel	= 	ppn[6:0] == c[6:0]; // select logic for this page table (for writing table)
-		wire [25:0]	addr = 	{4'b0000, c[6:0], addr_i[14:0]};
-		
+		wire        en   = r[12:3] == addr_i[24:15] & prot; // lookup logic when this table is active.
+		wire        sel  = ppn[6:0] == c[6:0]; // select logic for this page table (for writing table)
+		wire [25:0] addr =  {4'b0000, c[6:0], addr_i[14:0]};
+
 		always @(posedge clkcpu) begin
-		
+
 			if (wr & sel) begin 
-	
+
 				// code to program the table
 				r <= {addr_i[9:8], addr_i[11:10], addr_i[22:12]};
 				$display("writing to table entry %d := %x (%x)", c,  {addr_i[9:8], addr_i[11:10], addr_i[22:12]}, addr_i);
-				
+
 			end 
-			
+
 		end
-		
-    end
+
+	end
 
 endgenerate
 
-// 128 to 1 decode. 
+// 128 to 1 decode.
 assign addr_o = pgentry[0].en ? pgentry[0].addr : 
 		pgentry[1].en ? pgentry[1].addr : 
 		pgentry[2].en ? pgentry[2].addr : 

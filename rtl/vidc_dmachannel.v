@@ -35,16 +35,16 @@ module vidc_dmachannel
 	input           clkcpu,
 	input           ak,
 	output reg      rq,
-	input [31:0]    cpu_data,
+	input    [31:0] cpu_data,
 
-	output			busy,
-	input 			stall, // dont start another request with this high.
+	output          busy,
+	input           stall, // dont start another request with this high.
 
 	// device bus
-	input			clkdev,
-	input			cedev,
-	input			dev_ak,
-	output	[7:0]	dev_data
+	input           clkdev,
+	input           cedev,
+	input           dev_ak,
+	output    [7:0] dev_data
 );
 
 // 8 or 4 words fifo
@@ -57,8 +57,8 @@ wire [3:0] wrusedw;
 
 initial begin 
 
-	rq	= 1'b0;
-	
+	rq = 1'b0;
+
 end
 
 vidc_dcfifo VIDEO_FIFO(
@@ -74,7 +74,7 @@ vidc_dcfifo VIDEO_FIFO(
 );
 
 // DMA interface control
-// this is in the cpu clock domain. 
+// this is in the cpu clock domain.
 always @(posedge clkcpu) begin
 	reg rstD, rstD2;
 	rstD <= rst;
@@ -82,9 +82,9 @@ always @(posedge clkcpu) begin
 	if (rstD2 == 1'b1) begin
 
 		// do reset logic 
-		dma_count 	<= 2'd0;	
-		load 		<= 1'b0;
-		rq 			<= 1'b0;
+		dma_count <= 2'd0;
+		load      <= 1'b0;
+		rq        <= 1'b0;
 
 	end else begin
 
@@ -92,10 +92,10 @@ always @(posedge clkcpu) begin
 		if (ak & load) begin
 
 			// are we done?
-			if (dma_count == 2'd3) load 	<= 1'b0;
-			// clear the request on the first ack. 
+			if (dma_count == 2'd3) load <= 1'b0;
+			// clear the request on the first ack.
 			// the dma action will continue until 4 words are read.
-			rq	 	<= 1'b0;
+			rq <= 1'b0;
 
 			// count the ack pulses
 			dma_count <= dma_count + 2'd1;
@@ -103,12 +103,12 @@ always @(posedge clkcpu) begin
 		end else if (~load) begin
 
 			// possibly unnecessary?
-			dma_count 	<= 2'd0;
+			dma_count <= 2'd0;
 			// if the fifo can load and its our slot then go.
 			if (fifo_can_load === 1'b1) begin 
 				load <= 1'b1;
-				rq	 <= 1'b1;
-			end 
+				rq   <= 1'b1;
+			end
 		end
 	end
 

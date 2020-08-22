@@ -29,44 +29,44 @@
  
 module vidc_timing(
 
-		input 			clkcpu, 	// cpu clock
-		input 			wr, 		// write to video register.
-		input [31:0]	cpu_dat,	// data to write (data bus).
+		input         clkcpu,  // cpu clock
+		input         wr,      // write to video register.
+		input  [31:0] cpu_dat, // data to write (data bus).
 		
-		input 			clkvid,
-		input			cevid,
-		input			rst,
+		input         clkvid,
+		input         cevid,
+		input         rst,
 
 		output        o_vsync,
-		output        o_hsync, 
+		output        o_hsync,
 
 		output        o_cursor,
 		output        o_enabled,
 		output        o_border,
 		output        o_flyback
-    );
+);
 
 reg [9:0] hcount;
 reg [9:0] vcount;
 
 // register locations
-localparam  VIDEO_HCR 	= 6'b100000; 
-localparam  VIDEO_HSWR 	= 6'b100001; 
-localparam  VIDEO_HBSR 	= 6'b100010; 
-localparam  VIDEO_HDSR 	= 6'b100011; 
-localparam  VIDEO_HDER 	= 6'b100100; 
-localparam  VIDEO_HBER 	= 6'b100101; 
+localparam  VIDEO_HCR 	= 6'b100000;
+localparam  VIDEO_HSWR 	= 6'b100001;
+localparam  VIDEO_HBSR 	= 6'b100010;
+localparam  VIDEO_HDSR 	= 6'b100011;
+localparam  VIDEO_HDER 	= 6'b100100;
+localparam  VIDEO_HBER 	= 6'b100101;
 
-localparam  VIDEO_VCR 	= 6'b101000; 
-localparam  VIDEO_VSWR 	= 6'b101001; 
-localparam  VIDEO_VBSR 	= 6'b101010; 
-localparam  VIDEO_VDSR 	= 6'b101011; 
-localparam  VIDEO_VDER 	= 6'b101100; 
-localparam  VIDEO_VBER 	= 6'b101101; 
+localparam  VIDEO_VCR 	= 6'b101000;
+localparam  VIDEO_VSWR 	= 6'b101001;
+localparam  VIDEO_VBSR 	= 6'b101010;
+localparam  VIDEO_VDSR 	= 6'b101011;
+localparam  VIDEO_VDER 	= 6'b101100;
+localparam  VIDEO_VBER 	= 6'b101101;
 
-localparam  VIDEO_VCSR 	= 6'b101110; 
-localparam  VIDEO_VCER 	= 6'b101111; 
-localparam  VIDEO_HCSR 	= 6'b100110; 
+localparam  VIDEO_VCSR 	= 6'b101110;
+localparam  VIDEO_VCER 	= 6'b101111;
+localparam  VIDEO_HCSR 	= 6'b100110;
 
 // vertical registers 
 reg [9:0]		vidc_vcr;  // vertical cycle register
@@ -77,7 +77,7 @@ reg [9:0]		vidc_vder; // vertical display end
 reg [9:0]		vidc_vber; // vertical border end
 
 // horizontal registers 
-reg [9:0]		vidc_hcr;  //  horizontal cycle register
+reg [9:0]		vidc_hcr;  // horizontal cycle register
 reg [9:0]		vidc_hswr; // horizontal sync width
 reg [9:0]		vidc_hbsr; // horizontal border start
 reg [9:0]		vidc_hdsr; // horizontal display start
@@ -85,64 +85,64 @@ reg [9:0]		vidc_hder; // horizontal display end
 reg [9:0]		vidc_hber; // horizontal border end
 
 // cursor registers 
-reg [10:0]		vidc_hcsr; // horizontal cursor start
-reg [9:0]		vidc_vcsr; // vertical cursor start
-reg [9:0]		vidc_vcer; // vertical cursor end
+reg [10:0] vidc_hcsr; // horizontal cursor start
+reg [9:0]  vidc_vcsr; // vertical cursor start
+reg [9:0]  vidc_vcer; // vertical cursor end
 
 initial begin 
 
-	vidc_vcr		= 10'd0; // vertical cycle register
-	vidc_vswr	= 10'd0; // vertical sync width
-	vidc_vbsr	= 10'd0; // vertical border start
-	vidc_vdsr	= 10'd0; // vertical display start
-	vidc_vder	= 10'd0; // vertical display end
-	vidc_vber	= 10'd0; // vertical border end
+	vidc_vcr        = 10'd0; // vertical cycle register
+	vidc_vswr       = 10'd0; // vertical sync width
+	vidc_vbsr       = 10'd0; // vertical border start
+	vidc_vdsr       = 10'd0; // vertical display start
+	vidc_vder       = 10'd0; // vertical display end
+	vidc_vber       = 10'd0; // vertical border end
 
-	vidc_hcr    = 10'd0; // horizontal cycle register
-	vidc_hswr	= 10'd0; // horizontal sync width
-	vidc_hbsr	= 10'd0; // horizontal border start
-	vidc_hdsr	= 10'd0; // horizontal display start
-	vidc_hder	= 10'd0; // horizontal display end
-	vidc_hber	= 10'd0; // horizontal border end
-	
-	vidc_hcsr	= 11'd0; // horizontal cursor start
-	vidc_vcsr	= 10'd0;  // vertical cursor start
-	vidc_vcer	= 10'd0;  // vertical cursor end
+	vidc_hcr        = 10'd0; // horizontal cycle register
+	vidc_hswr       = 10'd0; // horizontal sync width
+	vidc_hbsr       = 10'd0; // horizontal border start
+	vidc_hdsr       = 10'd0; // horizontal display start
+	vidc_hder       = 10'd0; // horizontal display end
+	vidc_hber       = 10'd0; // horizontal border end
+
+	vidc_hcsr       = 11'd0; // horizontal cursor start
+	vidc_vcsr       = 10'd0; // vertical cursor start
+	vidc_vcer       = 10'd0; // vertical cursor end
 
 end 
 
 always @(posedge clkcpu) begin
 
 	if (wr) begin 
-	
+
 			$display("Writing the timing registers: 0x%08x", cpu_dat);
-		
-			case (cpu_dat[31:26])  
-				
+
+			case (cpu_dat[31:26])
+
 				// verical timing
-				VIDEO_VCR: 		vidc_vcr  <= cpu_dat[23:14];
-				VIDEO_VSWR: 	vidc_vswr <= cpu_dat[23:14];
-				VIDEO_VBSR: 	vidc_vbsr <= cpu_dat[23:14];
-				VIDEO_VBER: 	vidc_vber <= cpu_dat[23:14];
-				VIDEO_VDSR: 	vidc_vdsr <= cpu_dat[23:14];
-				VIDEO_VDER: 	vidc_vder <= cpu_dat[23:14];
+				VIDEO_VCR:  vidc_vcr  <= cpu_dat[23:14];
+				VIDEO_VSWR: vidc_vswr <= cpu_dat[23:14];
+				VIDEO_VBSR: vidc_vbsr <= cpu_dat[23:14];
+				VIDEO_VBER: vidc_vber <= cpu_dat[23:14];
+				VIDEO_VDSR: vidc_vdsr <= cpu_dat[23:14];
+				VIDEO_VDER: vidc_vder <= cpu_dat[23:14];
 				
 				// horizontal timing
-				VIDEO_HCR: 		vidc_hcr  <= {cpu_dat[22:14], 1'b0};
-				VIDEO_HSWR: 	vidc_hswr <= {cpu_dat[22:14], 1'b0};
-				VIDEO_HBSR: 	vidc_hbsr <= {cpu_dat[22:14], 1'b0};
-				VIDEO_HBER: 	vidc_hber <= {cpu_dat[22:14], 1'b0};
-				VIDEO_HDSR: 	vidc_hdsr <= {cpu_dat[22:14], 1'b0};
-				VIDEO_HDER: 	vidc_hder <= {cpu_dat[22:14], 1'b0};
-				
-				VIDEO_HCSR: 	vidc_hcsr <= cpu_dat[23:13];
-					
-				VIDEO_VCSR: 	vidc_vcsr <= cpu_dat[23:14];
-				VIDEO_VCER: 	vidc_vcer <= cpu_dat[23:14];
-				
-				default:		vidc_vcr <= vidc_vcr;
+				VIDEO_HCR:  vidc_hcr  <= {cpu_dat[22:14], 1'b0};
+				VIDEO_HSWR: vidc_hswr <= {cpu_dat[22:14], 1'b0};
+				VIDEO_HBSR: vidc_hbsr <= {cpu_dat[22:14], 1'b0};
+				VIDEO_HBER: vidc_hber <= {cpu_dat[22:14], 1'b0};
+				VIDEO_HDSR: vidc_hdsr <= {cpu_dat[22:14], 1'b0};
+				VIDEO_HDER: vidc_hder <= {cpu_dat[22:14], 1'b0};
+
+				VIDEO_HCSR: vidc_hcsr <= cpu_dat[23:13];
+
+				VIDEO_VCSR: vidc_vcsr <= cpu_dat[23:14];
+				VIDEO_VCER: vidc_vcer <= cpu_dat[23:14];
+
+				default:    vidc_vcr <= vidc_vcr;
 			endcase
-			
+
 	end
 
 end

@@ -30,31 +30,31 @@
 module vidc_audio
 (
 
- // cpu side - used to write registers
- input             cpu_clk, // cpu clock
- input             cpu_wr, // write to video register.
- input [31:0]      cpu_data, // data to write (data bus).
+	// cpu side - used to write registers
+	input             cpu_clk,  // cpu clock
+	input             cpu_wr,   // write to video register.
+	input [31:0]      cpu_data, // data to write (data bus).
 
- // audio/data side of the bus
- input             aud_clk,
- input             aud_ce,
- input             aud_rst,
- input [7:0]       aud_data,
- output reg        aud_en,
- 
- // actual audio out signal
- output reg [15:0] aud_right,
- output reg [15:0] aud_left
- );     
- 
+	// audio/data side of the bus
+	input             aud_clk,
+	input             aud_ce,
+	input             aud_rst,
+	input [7:0]       aud_data,
+	output reg        aud_en,
+
+	// actual audio out signal
+	output reg [15:0] aud_right,
+	output reg [15:0] aud_left
+);
+
 localparam  SOUND_SAMFREQ       = 4'b1100;
-localparam  SOUND_REGISTERS     = 5'b01100;   
+localparam  SOUND_REGISTERS     = 5'b01100;
 
 wire       aud_1mhz_en;
 reg  [4:0] aud_1mhz_count;
 
 reg  [2:0] channel;
-   
+
 reg  [2:0] vidc_sir[0:7];
 reg  [8:0] vidc_sfr;
 wire [2:0] vidc_mixer = vidc_sir[channel];
