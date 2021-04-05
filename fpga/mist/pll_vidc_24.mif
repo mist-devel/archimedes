@@ -18,7 +18,7 @@
 --    Device Speed Grade: 8
 --    PLL Scan Chain: Fast PLL (144 bits)
 --    File Name: /home/gyuri/git/archimedes/fpga/mist/pll_vidc_24.mif
---    Generated: Sat Aug  8 19:50:22 2020
+--    Generated: Mon Apr  5 11:12:25 2021
 
 WIDTH=1;
 DEPTH=144;

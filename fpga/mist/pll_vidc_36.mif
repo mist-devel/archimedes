@@ -17,8 +17,8 @@
 --    Device Part: -
 --    Device Speed Grade: 8
 --    PLL Scan Chain: Fast PLL (144 bits)
---    File Name: /home/gyuri/git/mist-board/cores/archie/fpga/mist/pll_vidc_36.mif
---    Generated: Sun May 17 02:54:24 2020
+--    File Name: /home/gyuri/git/archimedes/fpga/mist/pll_vidc_36.mif
+--    Generated: Mon Apr  5 11:08:09 2021
 
 WIDTH=1;
 DEPTH=144;
@@ -31,7 +31,7 @@ CONTENT BEGIN
 	1    :   0; -- Reserved Bits = 0 (1 bit(s))
 	2    :   0; -- Loop Filter Capacitance = 0 (2 bit(s)) (Setting 0)
 	3    :   0;
-	4    :   0; -- Loop Filter Resistance = 8 (5 bit(s)) (Setting 8)
+	4    :   1; -- Loop Filter Resistance = 24 (5 bit(s)) (Setting 24)
 	5    :   1;
 	6    :   0;
 	7    :   0;
@@ -45,38 +45,38 @@ CONTENT BEGIN
 	15   :   0; -- Charge Pump Current = 1 (3 bit(s)) (Setting 1)
 	16   :   0;
 	17   :   1;
-	18   :   0; -- N counter: Bypass = 0 (1 bit(s))
-	19   :   0; -- N counter: High Count = 3 (8 bit(s))
+	18   :   1; -- N counter: Bypass = 1 (1 bit(s))
+	19   :   0; -- N counter: High Count = 0 (8 bit(s))
 	20   :   0;
 	21   :   0;
 	22   :   0;
 	23   :   0;
 	24   :   0;
-	25   :   1;
-	26   :   1;
-	27   :   1; -- N counter: Odd Division = 1 (1 bit(s))
-	28   :   0; -- N counter: Low Count = 2 (8 bit(s))
+	25   :   0;
+	26   :   0;
+	27   :   0; -- N counter: Odd Division = 0 (1 bit(s))
+	28   :   0; -- N counter: Low Count = 0 (8 bit(s))
 	29   :   0;
 	30   :   0;
 	31   :   0;
 	32   :   0;
 	33   :   0;
-	34   :   1;
+	34   :   0;
 	35   :   0;
 	36   :   0; -- M counter: Bypass = 0 (1 bit(s))
-	37   :   0; -- M counter: High Count = 60 (8 bit(s))
+	37   :   0; -- M counter: High Count = 12 (8 bit(s))
 	38   :   0;
-	39   :   1;
-	40   :   1;
+	39   :   0;
+	40   :   0;
 	41   :   1;
 	42   :   1;
 	43   :   0;
 	44   :   0;
 	45   :   0; -- M counter: Odd Division = 0 (1 bit(s))
-	46   :   0; -- M counter: Low Count = 60 (8 bit(s))
+	46   :   0; -- M counter: Low Count = 12 (8 bit(s))
 	47   :   0;
-	48   :   1;
-	49   :   1;
+	48   :   0;
+	49   :   0;
 	50   :   1;
 	51   :   1;
 	52   :   0;

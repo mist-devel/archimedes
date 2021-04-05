@@ -4,7 +4,7 @@
 // MODULE: altpll 
 
 // ============================================================
-// File Name: pll_vidc.v
+// File Name: pll_vidc_24.v
 // Megafunction Name(s):
 // 			altpll
 //
@@ -36,7 +36,7 @@
 // synopsys translate_off
 `timescale 1 ps / 1 ps
 // synopsys translate_on
-module pll_vidc (
+module pll_vidc_24 (
 	areset,
 	configupdate,
 	inclk0,
@@ -137,7 +137,7 @@ module pll_vidc (
 		altpll_component.compensate_clock = "CLK0",
 		altpll_component.inclk0_input_frequency = 37037,
 		altpll_component.intended_device_family = "Cyclone III",
-		altpll_component.lpm_hint = "CBX_MODULE_PREFIX=pll_vidc",
+		altpll_component.lpm_hint = "CBX_MODULE_PREFIX=pll_vidc_24",
 		altpll_component.lpm_type = "altpll",
 		altpll_component.operation_mode = "NORMAL",
 		altpll_component.pll_type = "AUTO",
@@ -370,8 +370,8 @@ endmodule
 // Retrieval info: CONNECT: locked 0 0 0 0 @locked 0 0 0 0
 // Retrieval info: CONNECT: scandataout 0 0 0 0 @scandataout 0 0 0 0
 // Retrieval info: CONNECT: scandone 0 0 0 0 @scandone 0 0 0 0
-// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.ppf TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.v FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.ppf FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.inc FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.cmp FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.bsf FALSE
@@ -380,7 +380,14 @@ endmodule
 // Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc.mif FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL .mif FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24.mif TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_25.mif TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_36.mif TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_25.mif FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_36.mif FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24.ppf TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24.inc FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24.cmp FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24.bsf FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24_inst.v FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL pll_vidc_24_bb.v FALSE
 // Retrieval info: LIB_FILE: altera_mf
 // Retrieval info: CBX_MODULE_PREFIX: ON

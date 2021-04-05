@@ -117,7 +117,7 @@ clockgen CLOCKS(
 	.locked	(pll_ready)  // pll locked output
 );
 
-pll_vidc CLOCKS_VIDC(
+pll_vidc_36 CLOCKS_VIDC(
 	.inclk0	(CLOCK_27[0]),
 	.c0     (clk_pix), // 2x VIDC pixel clock (48, 50, 76 MHz);
 	.c1     (clk_vid), // 4x VIDC pixel clock for scandoubler use (24MHz mode => 96 MHz), otherwise 2x pixel clock
@@ -203,7 +203,7 @@ pll_reconfig pll_reconfig_inst
 );
 
 always @(posedge clk_sys) begin
-	reg [1:0] pixbaseclk_select_d;
+	reg [1:0] pixbaseclk_select_d = 2'b10;
 	reg [1:0] pll_reconfig_state = 0;
 	reg [9:0] pll_reconfig_timeout;
 
