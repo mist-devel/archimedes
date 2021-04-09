@@ -47,9 +47,9 @@ create_clock -name {SPI_SCK}  -period 41.666 -waveform { 20.8 41.666 } [get_port
 
 derive_pll_clocks
 
-set sdram_clk "CLOCKS|altpll_component|auto_generated|pll1|clk[3]"
+set sdram_clk "CLOCKS|altpll_component|auto_generated|pll1|clk[0]"
 set mem_clk   "CLOCKS|altpll_component|auto_generated|pll1|clk[1]"
-set sys_clk   "CLOCKS|altpll_component|auto_generated|pll1|clk[0]"
+set sys_clk   "CLOCKS|altpll_component|auto_generated|pll1|clk[2]"
 set vidc_clk  "CLOCKS_VIDC|altpll_component|auto_generated|pll1|clk[0]"
 set vidc2x_clk "CLOCKS_VIDC|altpll_component|auto_generated|pll1|clk[1]"
 
@@ -79,8 +79,8 @@ set_input_delay -clock [get_clocks $sdram_clk] -reference_pin [get_ports DRAM_CL
 set_output_delay -clock [get_clocks $sdram_clk] -reference_pin [get_ports DRAM_CLK] -max 1.5 [get_ports {DRAM_A* DRAM_BA* DRAM_CAS_N DRAM_CKE DRAM_CS_N DRAM_D* DRAM_RAS_N DRAM_WE_N}]
 set_output_delay -clock [get_clocks $sdram_clk] -reference_pin [get_ports DRAM_CLK] -min -0.8 [get_ports {DRAM_A* DRAM_BA* DRAM_CAS_N DRAM_CKE DRAM_CS_N DRAM_D* DRAM_RAS_N DRAM_WE_N}]
 
-set_output_delay -clock [get_clocks $vidc_clk] -max 0 [get_ports {VGA_*}]
-set_output_delay -clock [get_clocks $vidc_clk] -min -5 [get_ports {VGA_*}]
+set_output_delay -clock [get_clocks $vidc2x_clk] -max 0 [get_ports {VGA_*}]
+set_output_delay -clock [get_clocks $vidc2x_clk] -min -5 [get_ports {VGA_*}]
 
 #**************************************************************
 # Set Clock Groups
@@ -107,11 +107,10 @@ set_false_path -to [get_ports {LED}]
 #**************************************************************
 # SDRAM_CLK to internal sdram clock
 set_multicycle_path -from [get_clocks $sdram_clk] -to [get_clocks $mem_clk] -setup 2
-set_multicycle_path -from [get_clocks $sdram_clk] -to [get_clocks $mem_clk] -hold 1
 
 # system clock to internal sdram clock
-set_multicycle_path -from [get_clocks $sys_clk] -to [get_clocks $mem_clk] -setup 3
-set_multicycle_path -from [get_clocks $sys_clk] -to [get_clocks $mem_clk] -hold 2
+set_multicycle_path -from [get_clocks $sys_clk] -to [get_clocks $mem_clk] -setup 2
+set_multicycle_path -from [get_clocks $sys_clk] -to [get_clocks $mem_clk] -hold 1
 
 set_multicycle_path -to {VGA_*[*]} -setup 4
 set_multicycle_path -to {VGA_*[*]} -hold 3

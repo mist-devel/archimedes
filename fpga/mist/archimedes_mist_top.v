@@ -111,14 +111,14 @@ wire[63:0] rtc;
 
 clockgen CLOCKS(
 	.inclk0	(CLOCK_27[0]),
-	.c0		(clk_sys), // 40 MHz
+	.c0		(DRAM_CLK),// 120 MHz, shifted
 	.c1		(clk_mem), // 120 MHz
-	.c3		(DRAM_CLK),
+	.c2      (clk_sys), // 40 MHz
 	.locked	(pll_ready)  // pll locked output
 );
 
 pll_vidc_36 CLOCKS_VIDC(
-	.inclk0	(CLOCK_27[0]),
+	.inclk0	(clk_sys),
 	.c0     (clk_pix), // 2x VIDC pixel clock (48, 50, 76 MHz);
 	.c1     (clk_vid), // 4x VIDC pixel clock for scandoubler use (24MHz mode => 96 MHz), otherwise 2x pixel clock
 	.areset(pll_areset),
