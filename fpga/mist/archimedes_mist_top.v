@@ -66,8 +66,8 @@ wire [7:0] kbd_in_data;
 wire kbd_in_strobe;
 
 // generated clocks
-wire clk_pix;
-wire clk_vid;
+wire clk_pix, clk_pix_i;
+wire clk_vid, clk_vid_i;
 wire ce_pix;
 wire clk_sys /* synthesis keep */ ;
 wire clk_mem /* synthesis keep */ ;
@@ -119,8 +119,8 @@ clockgen CLOCKS(
 
 pll_vidc_36 CLOCKS_VIDC(
 	.inclk0	(clk_sys),
-	.c0     (clk_pix), // 2x VIDC pixel clock (48, 50, 76 MHz);
-	.c1     (clk_vid), // 4x VIDC pixel clock for scandoubler use (24MHz mode => 96 MHz), otherwise 2x pixel clock
+	.c0     (clk_pix_i), // 2x VIDC pixel clock (48, 50, 76 MHz);
+	.c1     (clk_vid_i), // 4x VIDC pixel clock for scandoubler use (24MHz mode => 96 MHz), otherwise 2x pixel clock
 	.areset(pll_areset),
 	.scanclk(pll_scanclk),
 	.scandata(pll_scandata),
@@ -129,6 +129,20 @@ pll_vidc_36 CLOCKS_VIDC(
 	.scandataout(pll_scandataout),
 	.scandone(pll_scandone),
 	.locked	(pll_vidc_ready)  // pll locked output
+);
+
+reg        vidc_clock_ena;
+
+clkctrl CLKCTRL_PIX(
+	.inclk(clk_pix_i),
+	.outclk(clk_pix),
+	.ena(vidc_clock_ena)
+);
+
+clkctrl CLKCTRL_VID(
+	.inclk(clk_vid_i),
+	.outclk(clk_vid),
+	.ena(vidc_clock_ena)
 );
 
 wire       pll_reconfig_busy;
@@ -213,8 +227,10 @@ always @(posedge clk_sys) begin
 	case (pll_reconfig_state)
 	2'b00:
 	begin
+		vidc_clock_ena <= 1;
 		pixbaseclk_select_d <= pixbaseclk_select;
 		if (pixbaseclk_select_d != pixbaseclk_select) begin
+			vidc_clock_ena <= 0;
 			pll_write_from_rom <= 1;
 			pll_reconfig_state <= 2'b01;
 		end
