@@ -84,6 +84,7 @@ reg   [3:0] sd_bank_active;
 wire  [1:0] sd_bank = wb_adr[22:21];
 wire [11:0] sd_row = wb_adr[20:9];
 reg  [23:0] sd_last_adr;
+reg  [15:0] sd_latch;
 
 initial begin
 	t       = 4'd0;
@@ -99,7 +100,7 @@ localparam CYCLE_RFSH_START = CYCLE_RAS_START;
 localparam CYCLE_CAS0       = CYCLE_RAS_START  + RASCAS_DELAY;
 localparam CYCLE_CAS1       = CYCLE_CAS0 + 1'd1;
 localparam CYCLE_CAS2       = CYCLE_CAS1 + 1'd1;
-localparam CYCLE_READ0      = CYCLE_CAS0 + CAS_LATENCY + 1'd1;
+localparam CYCLE_READ0      = CYCLE_CAS0 + CAS_LATENCY + 2'd2;
 localparam CYCLE_READ1      = CYCLE_READ0+ 1'd1;
 localparam CYCLE_READ2      = CYCLE_READ1+ 1'd1;
 localparam CYCLE_READ3      = CYCLE_READ2+ 1'd1;
@@ -124,6 +125,7 @@ always @(posedge sd_clk) begin
 	sd_dq <= 16'bZZZZZZZZZZZZZZZZ;
 `endif
 	sd_cmd <= CMD_NOP;
+	sd_latch <= sd_dq;
 
 	if (sd_rst) begin
 		t        <= 4'd0;
@@ -170,7 +172,7 @@ always @(posedge sd_clk) begin
 			if (sd_refresh == REFRESH_PERIOD) sd_need_refresh <= 1'b1;
 			if(|sd_word) begin
 				sd_word <= sd_word + 1'd1;
-				sd_dat[sd_word[2:1]][{sd_word[0],4'b0000} +:16] <= sd_dq;
+				sd_dat[sd_word[2:1]][{sd_word[0],4'b0000} +:16] <= sd_latch;
 			end
 			sd_req_reg <= sd_req;
 			sd_cache_hit <= ~wb_we && sd_last_adr[23:4] == wb_adr[23:4];
@@ -283,7 +285,7 @@ always @(posedge sd_clk) begin
 
 				CYCLE_READ0: begin 
 					if (~sd_we) begin 
-						sd_dat[0][15:0] <= sd_dq;
+						sd_dat[0][15:0] <= sd_latch;
 						sd_word <= 3'b001;
 					end else 
 						sd_cycle <= CYCLE_END;
