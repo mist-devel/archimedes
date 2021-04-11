@@ -117,6 +117,18 @@ clockgen CLOCKS(
 	.locked	(pll_ready)  // pll locked output
 );
 
+reg [3:0] clken_counter;
+reg       clk8m_en;
+reg       clk2m_en;
+
+always @(posedge clk_sys) begin
+	clken_counter <= clken_counter + 1'd1;
+	if (clken_counter == 19) clken_counter <= 0;
+
+	clk2m_en <= clken_counter ==  0;
+	clk8m_en <= clken_counter ==  0 || clken_counter ==  5 || clken_counter == 10 || clken_counter == 15;
+end
+
 pll_vidc_36 CLOCKS_VIDC(
 	.inclk0	(clk_sys),
 	.c0     (clk_pix_i), // 2x VIDC pixel clock (48, 50, 76 MHz);
@@ -456,6 +468,8 @@ archimedes_top ARCHIMEDES(
 	.CLKCPU_I       ( clk_sys        ),
 	.CLKPIX_I       ( clk_pix        ), // 2xVIDC clock
 	.CEPIX_O        ( ce_pix         ),
+	.CLK2M_EN       ( clk2m_en       ),
+	.CLK8M_EN       ( clk8m_en       ),
 
 	.RESET_I        ( reset          ),
 

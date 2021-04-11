@@ -25,6 +25,9 @@ module archimedes_top(
 	input 			CLKCPU_I,
 	input			CLKPIX_I,
 	output			CEPIX_O,
+
+	input 			CLK2M_EN,
+	input			CLK8M_EN,
 	
 	input 			RESET_I, 
 	
@@ -258,13 +261,11 @@ wire [15:0]	pod_dat_i;
 wire floppy_firq;
 wire floppy_drq;
 
-wire ioc_clk2m_en, ioc_clk8m_en;
-
 ioc IOC(
 
 	.clkcpu		( CLKCPU_I				), 
-	.clk2m_en	( ioc_clk2m_en			),
-	.clk8m_en	( ioc_clk8m_en			),
+	.clk2m_en	( CLK2M_EN              ),
+	.clk8m_en	( CLK8M_EN              ),
 	
 	.por		( RESET_I				),
 	.ir			( vid_flybk				),
@@ -305,8 +306,8 @@ wire 	podules_en = ioc_cs & ioc_select[4];
 podules PODULES(
 	// everything is synced to the master 32m clock except the pix clock.
 	.clkcpu			( CLKCPU_I				),
-	.clk2m_en		( ioc_clk2m_en			),
-	.clk8m_en		( ioc_clk8m_en			),
+	.clk2m_en		( CLK2M_EN              ),
+	.clk8m_en		( CLK8M_EN              ),
 	
 	.rst_i			( RESET_I				),
 
@@ -340,7 +341,7 @@ wire        fdc_sel = cpu_stb & cpu_cyc & floppy_en;
 fdc1772 #(.CLK(40000000)) FDC1772 (
 
 	.clkcpu         ( CLKCPU_I         ),
-	.clk8m_en       ( ioc_clk8m_en     ),
+	.clk8m_en       ( CLK8M_EN         ),
 
 	.cpu_sel        ( fdc_sel          ),
 	.cpu_rw         ( !cpu_we          ),

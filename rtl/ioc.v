@@ -29,9 +29,9 @@
  
 module ioc(
 
-	input 	 		clkcpu, 	// cpu bus clock domain
-	output			clk2m_en,
-	output			clk8m_en,
+	input           clkcpu, // cpu bus clock domain
+	input           clk2m_en,
+	input           clk8m_en,
 
 	input 			por, 		// power on reset signal.
 
@@ -71,8 +71,6 @@ module ioc(
 
 reg       ir_sync, ir_synced;
 always @(posedge clkcpu) { ir_synced, ir_sync } <= { ir_sync, ir };
-
-reg   [4:0] clken_counter;
 
 wire  [7:0] irqa_dout, irqb_dout, firq_dout;
 wire        irqa_req, irqb_req, firq_req;
@@ -252,10 +250,6 @@ always @(posedge clkcpu) begin
 
 	end
 
-	// increment the clock counter. 40 MHz clkcpu assumed.
-	clken_counter <= clken_counter + 1'd1;
-	if (clken_counter == 19) clken_counter <= 0;
-
 	if (write_request & ctrl_selected) begin 
 
 		ctrl_state <= wb_dat_i[5:0];
@@ -285,9 +279,6 @@ assign c_out = ctrl_state;
 assign ctrl_dout = { ir_synced, 1'b1, c_in & c_out }; 
 
 assign ir_edge = ~ir_r & ir_synced;
-
-assign clk2m_en = !clken_counter;
-assign clk8m_en = clken_counter == 0 || clken_counter == 5 || clken_counter == 10 || clken_counter == 15;
 
 assign wb_dat_o = read_request ?
                 (ctrl_selected ? ctrl_dout :
