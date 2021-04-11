@@ -111,21 +111,16 @@ localparam CYCLE_READ7      = CYCLE_READ6+ 1'd1;
 localparam CYCLE_END        = CYCLE_READ7;
 localparam CYCLE_RFSH_END   = CYCLE_RFSH_START + RFC_DELAY;
 
-localparam RAM_CLK = 120000000;
-localparam REFRESH_PERIOD = (RAM_CLK / (16 * 8192)) - CYCLE_END;
+// 64ms/8192 rows = 7.8us
+localparam RAM_CLK = 120;
+localparam REFRESH_PERIOD = (16'd78 * RAM_CLK / 4'd10) - CYCLE_END;
 
 `ifdef VERILATOR
 reg [15:0] sd_q;
 assign sd_dq = (sd_we && (sd_cycle == CYCLE_CAS1 || sd_cycle == CYCLE_CAS2)) ? sd_q : 16'bZZZZZZZZZZZZZZZZ;
 `endif
 
-always @(posedge sd_clk) begin 
-
-`ifndef VERILATOR
-	sd_dq <= 16'bZZZZZZZZZZZZZZZZ;
-`endif
-	sd_cmd <= CMD_NOP;
-	sd_latch <= sd_dq;
+always @(posedge sd_clk, posedge sd_rst) begin
 
 	if (sd_rst) begin
 		t        <= 4'd0;
@@ -135,6 +130,12 @@ always @(posedge sd_clk) begin
 		sd_last_adr <= 24'hffffff;
 		sd_need_refresh <= 1'b0;
 	end else begin
+`ifndef VERILATOR
+		sd_dq <= 16'bZZZZZZZZZZZZZZZZ;
+`endif
+		sd_cmd <= CMD_NOP;
+		sd_latch <= sd_dq;
+
 		if (!sd_ready) begin
 			sd_need_refresh <= 1'b0;
 			sd_last_adr <= 24'hffffff;
