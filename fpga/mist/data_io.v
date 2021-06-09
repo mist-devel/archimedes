@@ -153,7 +153,7 @@ always@(negedge sck or posedge ss) begin
 				CMD_IDE_REGS_RD:
 				begin
 					// send task file regs
-					dout_r <= ide_reg_i;
+					dout_r <= tf_o_pos[0] ? ide_reg_i : 8'h00;
 					ide_reg_i_adr <= tf_o_pos[3:1];
 					if (tf_o_pos[3:1] == 3'd7) ide_cmd <= ide_reg_i;
 				end
