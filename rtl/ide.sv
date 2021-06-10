@@ -28,9 +28,10 @@ module ide (
 	output reg [15:0] ide_dat_o,
 
 	// place any signals that need to be passed up to the top after here.
-	output reg        ide_req,
-	input             ide_err,
-	input             ide_ack,
+	output            ide_cmd_req,
+	output            ide_dat_req,
+	input       [7:0] ide_status,
+	input             ide_status_wr,
 
 	input       [2:0] ide_reg_o_adr,
 	output reg  [7:0] ide_reg_o,
@@ -45,16 +46,26 @@ module ide (
 	input             ide_data_we
 );
 
-assign ide_req = ide_cmd_req | ide_sector_req;
-
 reg [7:0] taskfile[8];
-reg [7:0] status;
+wire [7:0] status = {bsy,drdy,2'b00,drq,2'b00,err} /* synthesis keep */;
+
+// HDD status register bits
+wire bsy = busy & ~drq;
+wire drdy = ~(bsy|drq);
+wire err = error;
+wire drq /* synthesis keep */;
+
+reg  busy;
+reg  pio_in, pio_out;
+reg  error;
+
+wire sel_cmd = ide_sel && ide_we && ide_reg == 3'd7;
 
 // read from Task File Registers
 always @(*) begin
 	reg [7:0] ide_dat_b;
 	//cpu read
-	ide_dat_b = (ide_reg == 3'd7) ? { status[7:1], ide_err } : taskfile[ide_reg];
+	ide_dat_b = (ide_reg == 3'd7) ? status : taskfile[ide_reg];
 	ide_dat_o = 16'hFFFF;
 	if (ide_sel && !ide_we) begin
 		ide_dat_o = (ide_reg == 3'd0) ? data_out : { ide_dat_b, ide_dat_b };
@@ -64,73 +75,65 @@ always @(*) begin
 	ide_reg_o  = taskfile[ide_reg_o_adr];
 end
 
-reg ide_cmd_req;
 // write to Task File Registers
 always @(posedge clk) begin
-	ide_cmd_req <= 0;
-	// cpu write
-	if (ide_sel && ide_we) begin
-		taskfile[ide_reg] <= ide_dat_i[7:0];
-		// writing to the command register triggers the IO controller
-		if (ide_reg == 3'd7) ide_cmd_req <= 1;
-	end
-
-	// IO controller write
-	if (ide_reg_we) taskfile[ide_reg_i_adr] <= ide_reg_i;
-end
-
-reg ide_sector_req;
-
-// status register handling
-always @(posedge clk) begin
-	reg [7:0] sector_count;
-
 	if (reset) begin
-		status <= 8'h48;
-		ide_sector_req <= 0;
-		sector_count <= 8'd1;
+		busy <= 0;
 	end else begin
-		// write to command register starts the execution
-		if (ide_sel && ide_we && ide_reg == 3'd7) begin
-			sector_count <= taskfile[2];
-			case (taskfile[7])
-				8'h30, 8'hc5: status <= 8'h08; // request data
-				default: status <= 8'h80; // busy
-			endcase
+		// cpu write
+		if (ide_sel && ide_we) begin
+			taskfile[ide_reg] <= ide_dat_i[7:0];
+			// writing to the command register triggers the IO controller
+			if (ide_reg == 3'd7) busy <= 1;
 		end
 
-		if (ide_ack) begin
-			case (taskfile[7])
-				8'hec : status <= 8'h08; // ready to transfer
-				8'h20, 8'h30, 8'hc4, 8'hc5: ;
-				default: status <= 8'h40; // ready
-			endcase
-		end
+		if ((ide_status_wr && ide_status[7]) || (sector_count_dec && pio_in && sector_count == 8'h01)) busy <= 0;
 
-		// sector buffer - IO controller side
-		if ((ide_data_rd | ide_data_we) & ide_data_addr == 9'h1ff) status <= 8'h08; // sector buffer consumed/filled, ready to transfer
-		if (ide_data_rd | ide_data_we) ide_sector_req <= 0;
-
-		// sector buffer - CPU side
-		if (ide_sel_d && ~ide_sel && ide_reg == 3'd0 && data_addr == 8'hff) begin
-			status <= 8'h40; // ready
-			case (taskfile[7])
-				8'h20, 8'hc4: // reads
-				begin
-					sector_count <= sector_count - 1'd1;
-					if (sector_count != 1) ide_sector_req <= 1; // request the next sector
-				end
-				8'h30, 8'hc5:
-				begin
-					ide_sector_req <= 1; // write, signals the write buffer is ready
-					status <= 8'h80; // busy
-				end
-				default: ;
-			endcase
-
-		end
+		// IO controller write
+		if (ide_reg_we) taskfile[ide_reg_i_adr] <= ide_reg_i;
 	end
 end
+
+// pio in command type
+always @(posedge clk)
+	if (reset)
+		pio_in <= 0;
+	else if (drdy) // reset when processing of the current command ends
+		pio_in <= 0;
+	else if (busy && ide_status_wr && ide_status[3]) // set by SPI host
+		pio_in <= 1;
+
+// pio out command type
+always @(posedge clk)
+	if (reset)
+		pio_out <= 0;
+	else if (busy && ide_status_wr && ide_status[7]) // reset by SPI host when command processing completes
+		pio_out <= 0;
+	else if (busy && ide_status_wr && ide_status[2]) // set by SPI host
+		pio_out <= 1;
+
+// error status
+always @(posedge clk)
+	if (reset)
+		error <= 0;
+	else if (sel_cmd) // reset by the CPU when command register is written
+		error <= 0;
+	else if (busy && ide_status_wr && ide_status[0]) // set by SPI host
+		error <= 1;
+
+assign drq = (fifo_full & pio_in) | (~fifo_full & pio_out & sector_count != 0); // HDD data request status bit
+assign ide_cmd_req = bsy; // bsy is set when command register is written, tells the SPI host about new command
+assign ide_dat_req = (fifo_full && pio_out); // the FIFO is full so SPI host may read it
+
+// sector count
+reg  [7:0] sector_count;
+wire       sector_count_dec = sector_count != 0 && ide_sel_d && ~ide_sel && ide_reg == 3'd0 && data_addr == 8'hff;
+
+always @(posedge clk)
+	if (sel_cmd)
+		sector_count <= taskfile[2];
+	else if (sector_count_dec)
+		sector_count <= sector_count - 1'd1;
 
 reg   [7:0] data_addr;
 wire [15:0] data_out;
@@ -139,8 +142,23 @@ reg         ide_sel_d;
 // read/write data register
 always @(posedge clk) begin
 	ide_sel_d <= ide_sel;
-	if (ide_sel && ide_we && ide_reg == 3'd7) data_addr <= 0;
+	if (sel_cmd) data_addr <= 0;
 	if (ide_sel_d && ~ide_sel && ide_reg == 3'd0) data_addr <= data_addr + 1'd1;
+end
+
+reg         fifo_full;
+always @(posedge clk) begin
+	if (reset)
+		fifo_full <= 0;
+	else if (sel_cmd)
+		fifo_full <= 0;
+	else if (pio_in) begin // reads
+		if (ide_data_we && ide_data_addr == 9'h1FF) fifo_full <= 1; // full when the IO controller wrote the last byte
+		else if (ide_sel_d && ~ide_sel && ide_reg == 3'd0 && data_addr == 8'hFF) fifo_full <= 0; // not full when the CPU read the last word
+	end else if (pio_out) begin // writes
+		if (ide_sel_d && ~ide_sel && ide_reg == 3'd0 && data_addr == 8'hFF) fifo_full <= 1; // full when the CPU wrote the last word
+		else if (ide_data_rd && ide_data_addr == 9'h1FF) fifo_full <= 0; // not full when the IO controller read the last word
+	end
 end
 
 // mixed-width sector buffer

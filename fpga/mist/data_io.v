@@ -31,10 +31,10 @@ module data_io #(parameter ADDR_WIDTH=24, START_ADDR = 0) (
 	input               sdi,
 	output reg          sdo,
 
-	input               reset,
-	input               ide_req,
-	output reg          ide_ack,
-	output reg          ide_err,
+	input               ide_cmd_req,
+	input               ide_dat_req,
+	output reg    [7:0] ide_status,
+	output reg          ide_status_wr,
 	output reg    [2:0] ide_reg_i_adr,
 	input         [7:0] ide_reg_i,
 	output reg          ide_reg_we,
@@ -133,13 +133,8 @@ always@(posedge sck or posedge ss_sd) begin
 end
 
 // SPI transmitter FPGA -> IO
-// CMD_IDEDAT is required before the first sector of a write commands
-// and just before the _first_ one, even with multiple sector writes.
-wire [7:0] cmdcode = write_start ? CMD_IDEDAT : newcmd ? CMD_IDECMD : 8'h0;
+wire [7:0] cmdcode = { 4'h0, ide_dat_req, ide_cmd_req, 2'b00 };
 wire [4:0] tf_o_pos = byte_cnt - 4'd5;
-
-// need to know the ATA command sent by Archie for some local processing here
-reg  [7:0] ide_cmd;
 
 always@(negedge sck or posedge ss) begin
 	reg [7:0] dout_r;
@@ -155,7 +150,6 @@ always@(negedge sck or posedge ss) begin
 					// send task file regs
 					dout_r <= tf_o_pos[0] ? ide_reg_i : 8'h00;
 					ide_reg_i_adr <= tf_o_pos[3:1];
-					if (tf_o_pos[3:1] == 3'd7) ide_cmd <= ide_reg_i;
 				end
 
 				CMD_IDE_DATA_RD: dout_r <= ide_data_i;
@@ -195,9 +189,8 @@ always@(posedge sck or posedge ss) begin
 	end
 end
 
-reg       newcmd = 0;
-reg       write_req = 0;
-reg       write_start = 0;
+wire ide_req = ide_cmd_req | ide_dat_req;
+reg  ide_reqD;
 
 // Process bytes from SPI at the clk_sys domain
 always @(posedge clk) begin
@@ -217,44 +210,28 @@ always @(posedge clk) begin
 
 	wr <= 0;
 
-	// This "state-machine" is messy, but the firmware has to be clean up
-	// to make it more clear. And that would require changes in Minimig, too.
-	if (reset) begin
-		newcmd <= 0;
-		write_req <= 0;
-		write_start <= 0;
-	end
-	if (ide_req) begin
-		ide_data_addr <= 0;
-		ide_err <= 0;
-		newcmd <= 1;
-		write_start <= write_req;
-	end
+	ide_reqD <= ide_req;
+
 	ide_reg_we <= 0;
-	ide_ack <= 0;
+	ide_status_wr <= 0;
 
 	ide_data_we <= 0;
-	if (ide_data_we) begin
-		ide_data_addr <= ide_data_addr + 1'd1;
-		newcmd <= 0;
-	end
+	if (ide_data_we) ide_data_addr <= ide_data_addr + 1'd1;
 
 	ide_data_rd <= 0;
-    if (ide_data_rd) begin
-		ide_data_addr <= ide_data_addr + 1'b1;
-		write_req <= 0;
-		write_start <= 0;
-	end
+	if (ide_data_rd) ide_data_addr <= ide_data_addr + 1'b1;
+
+	if (!ide_reqD & ide_req) ide_data_addr <= 0;
 
 	//synchronize between SPI and sys clock domains
 	spi_receiver_strobeD <= spi_receiver_strobe_r;
-	spi_receiver_strobe <= spi_receiver_strobeD;
-	spi_transfer_endD       <= spi_transfer_end_r;
-	spi_transfer_end        <= spi_transfer_endD;
+	spi_receiver_strobe  <= spi_receiver_strobeD;
+	spi_transfer_endD    <= spi_transfer_end_r;
+	spi_transfer_end     <= spi_transfer_endD;
 
-	// strobe is set whenever a valid byte has been received
-	if (~spi_transfer_endD & spi_transfer_end) begin
+	if (spi_transfer_end) begin
 		abyte_cnt <= 0;
+	// strobe is set whenever a valid byte has been received
 	end else if (spi_receiver_strobeD ^ spi_receiver_strobe) begin
 
 		if(~&abyte_cnt)
@@ -267,13 +244,8 @@ always @(posedge clk) begin
 			// IDE commands
 			CMD_IDE_STATUS_WR:
 			if (abyte_cnt == 1) begin
-				// "real" status register handling inside the IDE module,
-				// since firmware status codes are not real ATA-1 status codes
-				// (I wonder how it works for Amiga)
-				if (spi_byte_in[7]) ide_ack <= 1;   // IDE_STATUS_END
-				if (spi_byte_in[4]) newcmd <= 0;    // IDE_STATUS_IRQ
-				if (spi_byte_in[2] || ((ide_cmd == 8'h30 || ide_cmd == 8'hc5) && spi_byte_in[4] && ~spi_byte_in[7])) write_req <= 1;
-				if (spi_byte_in[1]) ide_err <= 1;   // IDE_STATUS_ERR
+				ide_status_wr <= 1;
+				ide_status <= spi_byte_in;
 			end
 
 			CMD_IDE_REGS_WR:
@@ -350,7 +322,7 @@ always @(posedge clk) begin
 	spi_transfer_end_sd     <= spi_transfer_end_sdD;
 
 	// strobe is set whenever a valid byte has been received
-	if (~spi_transfer_end_sdD & spi_transfer_end_sd) begin
+	if (spi_transfer_end_sd) begin
 		abyte_cnt_sd <= 0;
 	end else if (spi_receiver_strobe_sdD ^ spi_receiver_strobe_sd) begin
 

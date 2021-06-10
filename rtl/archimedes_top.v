@@ -83,9 +83,10 @@ module archimedes_top(
 	input           sd_dout_strobe,
 
 	// connection to the IDE controller
-	output          ide_req,      // new command request
-	input           ide_err,
-	input           ide_ack,      // command finished on the IO controller side
+	output          ide_cmd_req,
+	output          ide_dat_req,
+	input     [7:0] ide_status,
+	input           ide_status_wr,
 	input     [2:0] ide_reg_o_adr,// requested task file register index
 	output    [7:0] ide_reg_o,    // task file register out
 	input           ide_reg_we,   // task file register write strobe from IO controller
@@ -386,9 +387,10 @@ ide IDE (
 	.ide_dat_o      ( ide_dat_o        ),
 	.ide_dat_i      ( cpu_dat_o[31:16] ),
 
-	.ide_req        ( ide_req          ),
-	.ide_ack        ( ide_ack          ),
-	.ide_err        ( ide_err          ),
+	.ide_cmd_req    ( ide_cmd_req      ),
+	.ide_dat_req    ( ide_dat_req      ),
+	.ide_status     ( ide_status       ),
+	.ide_status_wr  ( ide_status_wr    ),
 
 	.ide_reg_o_adr  ( ide_reg_o_adr    ),
 	.ide_reg_o      ( ide_reg_o        ),

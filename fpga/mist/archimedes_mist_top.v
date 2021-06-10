@@ -405,10 +405,10 @@ DATA_IO  (
 	.sdi            ( spi_din        ),
 	.sdo            ( data_io_sdo    ),
 
-	.reset          ( reset          ),
-	.ide_req        ( ide_req        ),
-	.ide_ack        ( ide_ack        ),
-	.ide_err        ( ide_err        ),
+	.ide_cmd_req    ( ide_cmd_req    ),
+	.ide_dat_req    ( ide_dat_req    ),
+	.ide_status     ( ide_status     ),
+	.ide_status_wr  ( ide_status_wr  ),
 	.ide_reg_o_adr  ( ide_reg_i_adr  ),
 	.ide_reg_o      ( ide_reg_i      ),
 	.ide_reg_we     ( ide_reg_we     ),
@@ -447,9 +447,10 @@ wire  [1:0] pixbaseclk_select;
 
 wire        i2c_din, i2c_dout, i2c_clock;
 
-wire        ide_req;
-wire        ide_ack;
-wire        ide_err;
+wire        ide_cmd_req;
+wire        ide_dat_req;
+wire  [7:0] ide_status;
+wire        ide_status_wr;
 wire  [2:0] ide_reg_o_adr;
 wire  [7:0] ide_reg_o;
 wire        ide_reg_we;
@@ -513,9 +514,10 @@ archimedes_top ARCHIMEDES(
 	.sd_dout_strobe ( sd_dout_strobe ),
 
 	// IDE controller
-	.ide_req        ( ide_req        ),
-	.ide_ack        ( ide_ack        ),
-	.ide_err        ( ide_err        ),
+	.ide_cmd_req    ( ide_cmd_req    ),
+	.ide_dat_req    ( ide_dat_req    ),
+	.ide_status     ( ide_status     ),
+	.ide_status_wr  ( ide_status_wr  ),
 	.ide_reg_o_adr  ( ide_reg_o_adr  ),
 	.ide_reg_o      ( ide_reg_o      ),
 	.ide_reg_we     ( ide_reg_we     ),
