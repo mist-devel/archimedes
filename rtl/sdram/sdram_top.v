@@ -268,7 +268,7 @@ always @(posedge sd_clk, posedge sd_rst) begin
 				CYCLE_CAS1: begin 
 					// now we access the second part of the 32 bit location.
 					sd_addr <= { 4'b0000, wb_adr[23], wb_adr[8:2], 1'b1 };  // no auto precharge
-					if (~sd_we) sd_dqm <= ~wb_sel[1:0];
+					if (~sd_we) sd_dqm <= 2'b00;
 
 					if (sd_we) begin
 						sd_cmd  <= CMD_WRITE;
@@ -282,7 +282,7 @@ always @(posedge sd_clk, posedge sd_rst) begin
 					end 
 				end
 
-				CYCLE_CAS2: if (~sd_we) sd_dqm <= ~wb_sel[3:2];
+				CYCLE_CAS2: if (~sd_we) sd_dqm <= 2'b00;
 
 				CYCLE_READ0: begin 
 					if (~sd_we) begin 
