@@ -370,8 +370,7 @@ wire  [8:0] sd_buff_addr;
 wire  [1:0] img_mounted;
 wire [31:0] img_size;
 
-wire user_io_sdo;
-user_io user_io(
+user_io #(.ARCHIE(1)) user_io(
 	// the spi interface
 	.clk_sys        ( clk_sys        ),
 	.SPI_CLK        ( SPI_SCK        ),
@@ -379,21 +378,22 @@ user_io user_io(
 	.SPI_MISO       ( SPI_DO         ),   // tristate handling inside user_io
 	.SPI_MOSI       ( SPI_DI         ),
 
-	.SWITCHES       ( switches       ),
-	.BUTTONS        ( buttons        ),
+	.switches       ( switches       ),
+	.buttons        ( buttons        ),
 	.scandoubler_disable(scandoubler_disable),
 	.ypbpr          ( ypbpr          ),
 	.no_csync       ( no_csync       ),
 	.rtc            ( rtc            ),
 
-	.JOY0           ( joyA           ),
-	.JOY1           ( joyB           ),
+	.joystick_0     ( joyA           ),
+	.joystick_1     ( joyB           ),
 
 	.kbd_out_data   ( kbd_out_data   ),
 	.kbd_out_strobe ( kbd_out_strobe ),
-	.kbd_in_data    ( kbd_in_data    ),
-	.kbd_in_strobe  ( kbd_in_strobe  ),
+	.key_code       ( kbd_in_data    ),
+	.key_strobe     ( kbd_in_strobe  ),
 
+	.clk_sd         ( clk_sys        ),
 	.sd_lba         ( sd_lba         ),
 	.sd_rd          ( sd_rd          ),
 	.sd_wr          ( sd_wr          ),
