@@ -93,9 +93,28 @@ reg        loader_stb = 1'b0 /* synthesis keep */ ;
 reg        rom_ready = 0;
 (*KEEP="TRUE"*)wire [3:0]	loader_sel /* synthesis keep */ ;
 (*KEEP="TRUE"*)wire [23:0]	loader_addr /* synthesis keep */ ;
-(*KEEP="TRUE"*)wire [31:0]	loader_dout /* synthesis keep */ ;
+(*KEEP="TRUE"*)wire [7:0]	loader_dout /* synthesis keep */ ;
 wire [7:0] loader_din;
-          
+
+// IDE
+wire        hdd_cmd_req;
+wire        hdd_dat_req;
+wire        hdd_status_wr;
+
+wire  [2:0] hdd_addr;
+wire        hdd_wr;
+
+wire [15:0] hdd_data_out;
+wire [15:0] hdd_data_in;
+wire        hdd_data_rd;
+wire        hdd_data_wr;
+
+wire [15:0] IDE_DAT_O;
+wire [15:0] IDE_DAT_I;
+wire  [2:0] IDE_A;
+wire        IDE_WE;
+wire        IDE_CS;
+
 // user io
 
 wire [7:0] joyA;
@@ -351,16 +370,13 @@ wire  [8:0] sd_buff_addr;
 wire  [1:0] img_mounted;
 wire [31:0] img_size;
 
-// de-multiplex spi outputs from user_io and data_io
-assign SPI_DO = (CONF_DATA0==0)?user_io_sdo:(SPI_SS2==0)?data_io_sdo:1'bZ;
-
 wire user_io_sdo;
 user_io user_io(
 	// the spi interface
 	.clk_sys        ( clk_sys        ),
 	.SPI_CLK        ( SPI_SCK        ),
 	.SPI_SS_IO      ( CONF_DATA0     ),
-	.SPI_MISO       ( user_io_sdo    ),   // tristate handling inside user_io
+	.SPI_MISO       ( SPI_DO         ),   // tristate handling inside user_io
 	.SPI_MOSI       ( SPI_DI         ),
 
 	.SWITCHES       ( switches       ),
@@ -394,43 +410,69 @@ user_io user_io(
 	.img_size       ( img_size       )
 );
 
-wire   spi_din = SPI_SS4 ? SPI_DI : SPI_DO;
+data_io #(.START_ADDR(24'h40_0000), .ENABLE_IDE(1'b1)) data_io(
+	.clk_sys       ( clk_sys      ),
+	.SPI_SCK       ( SPI_SCK      ),
+	.SPI_SS2       ( SPI_SS2      ),
+	.SPI_SS4       ( SPI_SS4      ),
+	.SPI_DI        ( SPI_DI       ),
+	.SPI_DO        ( SPI_DO       ),
+	.ioctl_download( downloading  ),
+	.ioctl_upload  ( uploading    ),
+	.ioctl_index   ( dio_index    ),
+	.ioctl_wr      ( loader_we    ),
+	.ioctl_addr    ( loader_addr  ),
+	.ioctl_dout    ( loader_dout  ),
+	.ioctl_din     ( loader_din   ),
 
-wire data_io_sdo;
-data_io # ( .START_ADDR(24'h40_0000) )
-DATA_IO  (
-	.sck            ( SPI_SCK        ),
-	.ss             ( SPI_SS2        ),
-	.ss_sd          ( SPI_SS4        ),
-	.sdi            ( spi_din        ),
-	.sdo            ( data_io_sdo    ),
+	.hdd_clk       ( clk_sys      ),
+	.hdd_cmd_req   ( hdd_cmd_req  ),
+	.hdd_dat_req   ( hdd_dat_req  ),
+	.hdd_status_wr ( hdd_status_wr),
+	.hdd_addr      ( hdd_addr     ),
+	.hdd_wr        ( hdd_wr       ),
+	.hdd_data_out  ( hdd_data_out ),
+	.hdd_data_in   ( hdd_data_in  ),
+	.hdd_data_rd   ( hdd_data_rd  ),
+	.hdd_data_wr   ( hdd_data_wr  )
+);
 
-	.ide_cmd_req    ( ide_cmd_req    ),
-	.ide_dat_req    ( ide_dat_req    ),
-	.ide_status     ( ide_status     ),
-	.ide_status_wr  ( ide_status_wr  ),
-	.ide_reg_o_adr  ( ide_reg_i_adr  ),
-	.ide_reg_o      ( ide_reg_i      ),
-	.ide_reg_we     ( ide_reg_we     ),
-	.ide_reg_i_adr  ( ide_reg_o_adr  ),
-	.ide_reg_i      ( ide_reg_o      ),
-	.ide_data_addr  ( ide_data_addr  ),
-	.ide_data_o     ( ide_data_i     ),
-	.ide_data_i     ( ide_data_o     ),
-	.ide_data_rd    ( ide_data_rd    ),
-	.ide_data_we    ( ide_data_we    ),
+assign loader_sel = loader_addr[1:0] == 2'b00 ? 4'b0001 :
+                    loader_addr[1:0] == 2'b01 ? 4'b0010 :
+                    loader_addr[1:0] == 2'b10 ? 4'b0100 : 4'b1000;
 
-	.downloading    ( downloading    ),
-	.uploading      ( uploading      ),
-	.index          ( dio_index      ),
+ide ide (
+	.clk(clk_sys), // system clock
+	.clk_en(1'b1),
+	.reset(reset),
 
-	// ram interface
-	.clk           ( clk_sys         ),
-	.wr            ( loader_we       ),
-	.a             ( loader_addr     ),
-	.sel           ( loader_sel      ),
-	.dout          ( loader_dout     ),
-	.din           ( loader_din      )
+	// cpu interface
+	.address_in(IDE_A[2:0]),
+	.sel_secondary(1'b0),
+	.data_in({IDE_DAT_O[7:0], IDE_DAT_O[15:8]}),
+	.data_out({IDE_DAT_I[7:0], IDE_DAT_I[15:8]}),
+	.rd(~IDE_WE),
+	.hwr(IDE_WE),
+	.lwr(IDE_WE),
+	.sel_ide(IDE_CS),
+	.intreq(),
+	.intreq_ack(),  // interrupt clear
+	.nrdy(),				// fifo is not ready for reading 
+	.hdd0_ena(2'b11),		// enables Master & Slave drives on primary channel
+	.hdd1_ena(2'b00),		// enables Master & Slave drives on secondary channel
+	.fifo_rd(),
+	.fifo_wr(),
+
+	// io controller interface
+	.hdd_cmd_req   ( hdd_cmd_req  ),
+	.hdd_dat_req   ( hdd_dat_req  ),
+	.hdd_status_wr ( hdd_status_wr),
+	.hdd_addr      ( hdd_addr     ),
+	.hdd_wr        ( hdd_wr       ),
+	.hdd_data_in   ( hdd_data_in  ),
+	.hdd_data_out  ( hdd_data_out ),
+	.hdd_data_rd   ( hdd_data_rd  ),
+	.hdd_data_wr   ( hdd_data_wr  )
 );
 
 wire        core_ack_in   /* synthesis keep */ ;
@@ -447,25 +489,10 @@ wire  [1:0] pixbaseclk_select;
 
 wire        i2c_din, i2c_dout, i2c_clock;
 
-wire        ide_cmd_req;
-wire        ide_dat_req;
-wire  [7:0] ide_status;
-wire        ide_status_wr;
-wire  [2:0] ide_reg_o_adr;
-wire  [7:0] ide_reg_o;
-wire        ide_reg_we;
-wire  [2:0] ide_reg_i_adr;
-wire  [7:0] ide_reg_i;
-wire  [8:0] ide_data_addr;
-wire  [7:0] ide_data_o;
-wire  [7:0] ide_data_i;
-wire        ide_data_rd;
-wire        ide_data_we;
-
 wire        reset = ~ram_ready | ~rom_ready | buttons[1];
 
 archimedes_top ARCHIMEDES(
-	
+
 	.CLKCPU_I       ( clk_sys        ),
 	.CLKPIX_I       ( clk_pix        ), // 2xVIDC clock
 	.CEPIX_O        ( ce_pix         ),
@@ -514,20 +541,11 @@ archimedes_top ARCHIMEDES(
 	.sd_dout_strobe ( sd_dout_strobe ),
 
 	// IDE controller
-	.ide_cmd_req    ( ide_cmd_req    ),
-	.ide_dat_req    ( ide_dat_req    ),
-	.ide_status     ( ide_status     ),
-	.ide_status_wr  ( ide_status_wr  ),
-	.ide_reg_o_adr  ( ide_reg_o_adr  ),
-	.ide_reg_o      ( ide_reg_o      ),
-	.ide_reg_we     ( ide_reg_we     ),
-	.ide_reg_i_adr  ( ide_reg_i_adr  ),
-	.ide_reg_i      ( ide_reg_i      ),
-	.ide_data_addr  ( ide_data_addr  ),
-	.ide_data_o     ( ide_data_o     ),
-	.ide_data_i     ( ide_data_i     ),
-	.ide_data_rd    ( ide_data_rd    ),
-	.ide_data_we    ( ide_data_we    ),
+	.IDE_DAT_O      ( IDE_DAT_O      ),
+	.IDE_DAT_I      ( IDE_DAT_I      ),
+	.IDE_A          ( IDE_A          ),
+	.IDE_WE         ( IDE_WE         ),
+	.IDE_CS         ( IDE_CS         ),
 
 	.KBD_OUT_DATA   ( kbd_out_data   ),
 	.KBD_OUT_STROBE ( kbd_out_strobe ),
@@ -623,7 +641,7 @@ assign ram_sel      = loader_active ? loader_sel : core_sel_o;
 assign ram_address  = loader_active ? {loader_addr[23:2],2'b00} : {core_address_out[23:2],2'b00};
 assign ram_stb      = loader_active ? loader_stb : core_stb_out;
 assign ram_cyc      = loader_active ? loader_stb : core_stb_out;
-assign ram_data_in  = loader_active ? loader_dout : core_data_out;
+assign ram_data_in  = loader_active ? {loader_dout, loader_dout, loader_dout, loader_dout} : core_data_out;
 assign core_ack_in  = loader_active ? 1'b0 : ram_ack;
 
 endmodule // archimedes_mist_top

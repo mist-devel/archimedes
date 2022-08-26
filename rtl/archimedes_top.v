@@ -83,20 +83,11 @@ module archimedes_top(
 	input           sd_dout_strobe,
 
 	// connection to the IDE controller
-	output          ide_cmd_req,
-	output          ide_dat_req,
-	input     [7:0] ide_status,
-	input           ide_status_wr,
-	input     [2:0] ide_reg_o_adr,// requested task file register index
-	output    [7:0] ide_reg_o,    // task file register out
-	input           ide_reg_we,   // task file register write strobe from IO controller
-	input     [2:0] ide_reg_i_adr,
-	input     [7:0] ide_reg_i,    // task file register input
-	input     [8:0] ide_data_addr,
-	output    [7:0] ide_data_o,
-	input     [7:0] ide_data_i,
-	input           ide_data_rd,
-	input           ide_data_we,
+	output  [15:0] IDE_DAT_O,
+	input   [15:0] IDE_DAT_I,
+	output   [2:0] IDE_A,
+	output         IDE_WE,
+	output         IDE_CS,
 
 	// connection to keyboard controller
 	output [7:0]   KBD_OUT_DATA,
@@ -322,9 +313,13 @@ podules PODULES(
 	.wb_dat_i		( cpu_dat_o[15:0]		),
 	.wb_adr			( cpu_address[15:2]		),
 
-	.ide_sel		( ide_sel				),
-	.ide_din		( ide_dat_o				)
+	.ide_sel		( IDE_CS				),
+	.ide_din		( IDE_DAT_I			)
 );
+
+assign      IDE_DAT_O = cpu_dat_o[31:16];
+assign      IDE_WE = cpu_we;
+assign      IDE_A = cpu_address[4:2];
 
 wire [7:0]  floppy_dat_o;
 wire        floppy_en = ioc_cs & ioc_select[1];
@@ -371,38 +366,6 @@ fdc1772 #(.EXT_MOTOR(1'b1)) FDC1772 (
 	.floppy_side	( floppy_side      ),
 //	.floppy_density ( floppy_density   ),
 	.floppy_reset	( floppy_reset     )
-);
-
-wire [15:0] ide_dat_o;
-wire        ide_sel;
-
-ide IDE (
-
-	.clk            ( CLKCPU_I         ),
-	.reset          ( RESET_I          ),
-
-	.ide_sel        ( ide_sel          ),
-	.ide_we         ( cpu_we           ),
-	.ide_reg        ( cpu_address[4:2] ),
-	.ide_dat_o      ( ide_dat_o        ),
-	.ide_dat_i      ( cpu_dat_o[31:16] ),
-
-	.ide_cmd_req    ( ide_cmd_req      ),
-	.ide_dat_req    ( ide_dat_req      ),
-	.ide_status     ( ide_status       ),
-	.ide_status_wr  ( ide_status_wr    ),
-
-	.ide_reg_o_adr  ( ide_reg_o_adr    ),
-	.ide_reg_o      ( ide_reg_o        ),
-	.ide_reg_we     ( ide_reg_we       ),
-	.ide_reg_i_adr  ( ide_reg_i_adr    ),
-	.ide_reg_i      ( ide_reg_i        ),
-
-	.ide_data_addr  ( ide_data_addr    ),
-	.ide_data_o     ( ide_data_o       ),
-	.ide_data_i     ( ide_data_i       ),
-	.ide_data_rd    ( ide_data_rd      ),
-	.ide_data_we    ( ide_data_we      )
 );
 
 wire [7:0]	latches_dat_o;
