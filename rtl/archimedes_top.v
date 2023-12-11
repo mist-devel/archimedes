@@ -48,13 +48,15 @@ module archimedes_top(
 	output [31:0]	MEM_DAT_O,
 
 	// video signals (VGA)
-	output			HSYNC,
-	output			VSYNC,
-	
-	output  [3:0]	VIDEO_R,
-	output  [3:0]	VIDEO_G,
-	output  [3:0]	VIDEO_B,
-	output			VIDEO_EN,
+	output        HSYNC,
+	output        VSYNC,
+	output        HBLANK,
+	output        VBLANK,
+
+	output  [3:0] VIDEO_R,
+	output  [3:0] VIDEO_G,
+	output  [3:0] VIDEO_B,
+	output        VIDEO_EN,
 	
 	// VIDC Enhancer selection.
 	// These are from external latch C
@@ -212,35 +214,37 @@ memc MEMC(
 
 vidc VIDC(
 
-	  .clkpix	( CLKPIX_I	),
-	  .cepix_hi	( CEPIX_O	),
+	.clkpix	( CLKPIX_I	),
+	.cepix_hi	( CEPIX_O	),
 
-	  .clkcpu	( CLKCPU_I	),
-	  .rst_i	( RESET_I),
-	  
-	  .cpu_dat	( cpu_dat_o	),
+	.clkcpu	( CLKCPU_I	),
+	.rst_i	( RESET_I),
+ 
+	.cpu_dat	( cpu_dat_o	),
 
-	  // memc 
-	  .flybk		( vid_flybk	),
-	  .vidak		( vid_ack	),
-	  .vidrq		( vid_req	),
-	  .sndak		( snd_ack	),
-	  .sndrq		( snd_req	),
-	  
-	  .viddat	( MEM_DAT_I	),
-	  .vidw		( vid_we		),
-	
-	  // video signals
-	  .hsync		( HSYNC		),
-	  .vsync		( VSYNC		),
-	  .video_r	( VIDEO_R	),
-	  .video_g	( VIDEO_G	),
-	  .video_b	( VIDEO_B	),
-	  .video_en ( VIDEO_EN  ),
+	// memc
+	.flybk		( vid_flybk	),
+	.vidak		( vid_ack	),
+	.vidrq		( vid_req	),
+	.sndak		( snd_ack	),
+	.sndrq		( snd_req	),
 
-	  // audio signals
-	  .audio_l	( AUDIO_L	),
-	  .audio_r	( AUDIO_R	)
+	.viddat         ( MEM_DAT_I ),
+	.vidw           ( vid_we    ),
+
+	// video signals
+	.hsync          ( HSYNC     ),
+	.vsync          ( VSYNC     ),
+	.hblank         ( HBLANK    ),
+	.vblank         ( VBLANK    ),
+	.video_r        ( VIDEO_R   ),
+	.video_g        ( VIDEO_G   ),
+	.video_b        ( VIDEO_B   ),
+	.video_en       ( VIDEO_EN  ),
+
+	// audio signals
+	.audio_l        ( AUDIO_L   ),
+	.audio_r        ( AUDIO_R   )
 );
 
 wire [1:0]	ioc_speed = cpu_address[20:19];

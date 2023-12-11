@@ -50,6 +50,8 @@ module vidc(
 	// video outputs
 	output          hsync,
 	output          vsync,
+	output          hblank,
+	output          vblank,
 
 	output    [3:0] video_r,
 	output    [3:0] video_g,
@@ -138,6 +140,8 @@ vidc_timing TIMING(
 
 	.o_hsync   ( hsync       ),
 	.o_vsync   ( vsync       ),
+	.o_hblank  ( hblank      ),
+	.o_vblank  ( vblank      ),
 	.o_flyback ( flybk       ),
 	.o_enabled ( enabled     ),
 	.o_cursor  ( cur_enabled ),

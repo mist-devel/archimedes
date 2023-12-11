@@ -39,6 +39,8 @@ module vidc_timing(
 
 		output        o_vsync,
 		output        o_hsync,
+		output        o_hblank,
+		output        o_vblank,
 
 		output        o_cursor,
 		output        o_enabled,
@@ -161,6 +163,8 @@ assign o_cursor = hcursor & vcursor;
 assign o_flyback = vflyback;
 assign o_enabled = hdisplay & vdisplay;
 assign o_border = hborder & vborder;
+assign o_hblank = ~hborder;
+assign o_vblank = ~vborder;
 assign o_vsync = ~vsync;
 assign o_hsync = ~hsync;
 
