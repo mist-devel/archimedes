@@ -94,6 +94,12 @@ module archimedes_mist_top(
 	output        I2S_LRCK,
 	output        I2S_DATA,
 `endif
+`ifdef I2S_AUDIO_HDMI
+	output        HDMI_MCLK,
+	output        HDMI_BCK,
+	output        HDMI_LRCK,
+	output        HDMI_SDATA,
+`endif
 `ifdef SPDIF_AUDIO
 	output        SPDIF,
 `endif
@@ -797,6 +803,7 @@ audio	AUDIO	(
 wire [31:0] clk_rate = pixbaseclk_select == 2'b01 ? 32'd50_000_000 :
                        pixbaseclk_select == 2'b10 ? 32'd72_000_000 : 32'd48_000_000;
 
+`ifdef I2S_AUDIO
 i2s i2s (
 	.reset(1'b0),
 	.clk(clk_pix),
@@ -809,7 +816,17 @@ i2s i2s (
 	.left_chan({~coreaud_l[15], coreaud_l[14:0]}),
 	.right_chan({~coreaud_r[15], coreaud_r[14:0]})
 );
+`ifdef I2S_AUDIO_HDMI
+assign HDMI_MCLK = 0;
+always @(posedge clk_pix) begin
+	HDMI_BCK <= I2S_BCK;
+	HDMI_LRCK <= I2S_LRCK;
+	HDMI_SDATA <= I2S_DATA;
+end
+`endif
+`endif
 
+`ifdef SPDIF_AUDIO
 spdif spdif (
 	.clk_i(clk_pix),
 	.rst_i(1'b0),
@@ -817,6 +834,7 @@ spdif spdif (
 	.spdif_o(SPDIF),
 	.sample_i({~coreaud_r[15], coreaud_r[14:0], ~coreaud_l[15], coreaud_l[14:0]})
 );
+`endif
 
 always @(posedge clk_sys) begin 
 	reg loader_active_old;
